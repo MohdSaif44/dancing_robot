@@ -21,7 +21,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "usb_device.h"
-#include "/home/saif/Desktop/STM32/Wall_E/Wall_E/Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_core.h"
+#include "usbd_core.h"
 #include "usbd_desc.h"
 #include "usbd_cdc.h"
 #include "usbd_cdc_if.h"

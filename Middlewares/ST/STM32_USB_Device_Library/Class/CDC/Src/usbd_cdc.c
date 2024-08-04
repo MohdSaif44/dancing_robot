@@ -57,7 +57,7 @@ EndBSPDependencies */
 
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_cdc.h"
-#include "/home/saif/Desktop/STM32/Wall_E/Wall_E/Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ctlreq.h"
+#include "usbd_ctlreq.h"
 
 
 /** @addtogroup STM32_USB_DEVICE_LIBRARY

@@ -17,8 +17,8 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
-#include "/home/saif/Desktop/STM32/Wall_E/Wall_E/Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ctlreq.h"
-#include "/home/saif/Desktop/STM32/Wall_E/Wall_E/Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ioreq.h"
+#include "usbd_ctlreq.h"
+#include "usbd_ioreq.h"
 
 #ifdef USE_USBD_COMPOSITE
 #include "usbd_composite_builder.h"

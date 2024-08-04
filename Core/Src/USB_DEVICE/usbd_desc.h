@@ -26,7 +26,7 @@
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "/home/saif/Desktop/STM32/Wall_E/Wall_E/Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_def.h"
+#include "usbd_def.h"
 
 /* USER CODE BEGIN INCLUDE */
 

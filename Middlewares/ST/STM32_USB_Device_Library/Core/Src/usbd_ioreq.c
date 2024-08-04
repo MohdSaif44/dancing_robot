@@ -17,7 +17,7 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
-#include "/home/saif/Desktop/STM32/Wall_E/Wall_E/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c"
+#include "usbd_ioreq.h"
 
 /** @addtogroup STM32_USB_DEVICE_LIBRARY
   * @{
