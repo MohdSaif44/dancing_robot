@@ -35,7 +35,7 @@ extern "C" {
 #include "SPI/SPI.h"
 #include "PSx_Interface/PSx_Interface.h"
 #include "RNS_interface/RNS_interface.h"
-#include "ADC/adc.h"
+//#include "ADC/adc.h"
 #include "SERVO/servo.h"
 #include "KF/KF.h"
 #include "LASER/laser.h"
@@ -112,6 +112,9 @@ extern "C" {
 #define TIM3_CHANNEL3_PIN	GPIOB, GPIO_PIN_0
 #define TIM3_CHANNEL4_PIN	GPIOB, GPIO_PIN_1
 
+#define TIM12_CHANNEL1_PIN	GPIOB, GPIO_PIN_14
+#define TIM12_CHANNEL2_PIN	GPIOB, GPIO_PIN_15
+
 #define TIM1_CHANNEL3_PIN	GPIOE, GPIO_PIN_13
 #define TIM1_CHANNEL4_PIN	GPIOE, GPIO_PIN_14
 
@@ -156,7 +159,7 @@ uint8_t insData_receive[2];
 PSxBT_t ps4;
 MODN_t Modn;
 ABT_t filter;
-ADC_t adc;
+//ADC_t adc;
 LASER_t r_laser,l_laser;
 KALMANFILTER_t kf_adc_r,kf_adc_l,kf_pres;
 PID_t pid_laser_R,pid_laser_L,pid_pres,pid_z;
@@ -164,6 +167,7 @@ Srv_Drv_t srv_drv;
 Mov_Ave_t mov_l_r,mov_l_l;
 STP_t step1;
 STP_t step2;
+PID_t yaw_pid, x_pid, y_pid;
 
 
 #define PB1 		GPIOB_IN->bit7
@@ -173,11 +177,16 @@ STP_t step2;
 #define led2		GPIOC_OUT->bit14
 #define led3		GPIOC_OUT->bit15
 
+#define LOCKED ps4.button & CIRCLE
+#define AUTOMATIC ps4.button & SQUARE
+
 //Global Declarations
 float v1, v2, v3, v4, wr, xr, yr, orientation;    //MODN variables
-float xpos, ypos, z;                              //Encoder Values
+float xpos, ypos, z; //Encoder Values
+float Vx,Vy;
 float a, b, c, d, pa, pb, pc, pd;
-float xcord,ycord,vel1,vel2,vel3,vel4,pos1,pos2,pos3,pos4,YawAngle;
+float xcord,ycord,vel1,vel2,vel3,vel4,pos1,pos2,pos3,pos4,YawAngle,target_pos_x,target_pos_y;
+float error_angle, error_x, error_y;
 char debug_message[50];
 
 typedef union {
@@ -185,7 +194,7 @@ typedef union {
 
 	struct{
 
-		uint8_t flag1:1;
+		uint8_t mode:1;
 		uint8_t flag2:1;
 		uint8_t flag3:1;
 		uint8_t flag4:1;
@@ -204,6 +213,13 @@ typedef union {
 	};
 
 } sys_t;
+
+enum {
+
+	MANUAL,
+	AUTO
+
+};
 
 
 volatile sys_t sys;

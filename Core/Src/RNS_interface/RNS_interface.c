@@ -378,6 +378,7 @@ uint8_t RNSEnquire(unsigned char parameter, RNS_interface_t* rns){
 	insData_send[1] = rns->ins.instruction;
 	CAN_TxMsg(rns->rns_hcanx,mainboard_TO_RNS,insData_send,2);
 
+
 	while(rns->RNS_data.common_instruction == RNS_WAITING){
 		if(GPIOB_IN->bit7==0){
 			GPIOC_OUT->bit14=0;

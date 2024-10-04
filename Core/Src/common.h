@@ -69,4 +69,5 @@ void enq(void);
 
 void BlueBee(UART_HandleTypeDef *huart);
 
+
 #endif /* INC_COMMON_H_ */

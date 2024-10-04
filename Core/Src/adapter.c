@@ -74,18 +74,18 @@ void Initialize(){
 	UARTInit(&huart5,115200, ENABLE, 5,0);
 
 //	QEIInit(&htim1,5,5);
-//	QEIInit(&htim4,5,5);
-//	QEIInit(&htim8,5,5);
+	QEIInit(&htim4,5,5);
+	QEIInit(&htim8,5,5);
 
-	PWMTimeBaseInit(&htim1, 65355, 76);
-	PWMChannelConfig(&htim1, TIM_CHANNEL_3, TIM1_CHANNEL3_PIN); //TIM1_CHANNEL3_PIN
-	PWMChannelConfig(&htim1, TIM_CHANNEL_4 , TIM1_CHANNEL4_PIN);//IP3
+	PWMTimeBaseInit(&htim1, 20000, 168);
+	PWMChannelConfig(&htim1, TIM_CHANNEL_3, IP2_PIN);
+	PWMChannelConfig(&htim1, TIM_CHANNEL_4, IP3_PIN);
 
 	PWMTimeBaseInit(&htim3, 20000, 84);
 	PWMChannelConfig(&htim3, TIM_CHANNEL_3, TIM3_CHANNEL3_PIN);
 	PWMChannelConfig(&htim3, TIM_CHANNEL_4 , TIM3_CHANNEL4_PIN);
 
-	PWMTimeBaseInit(&htim5, 2000, 88);
+	PWMTimeBaseInit(&htim5, 20000, 84);
 	PWMChannelConfig(&htim5, TIM_CHANNEL_1, TIM5_CHANNEL1_PIN);
 	PWMChannelConfig(&htim5, TIM_CHANNEL_2, TIM5_CHANNEL2_PIN);
 	PWMChannelConfig(&htim5, TIM_CHANNEL_3, TIM5_CHANNEL3_PIN);
@@ -95,6 +95,9 @@ void Initialize(){
 	PWMChannelConfig(&htim9, TIM_CHANNEL_1, TIM9_CHANNEL1_PIN);
 	PWMChannelConfig(&htim9, TIM_CHANNEL_2, TIM9_CHANNEL2_PIN);
 
+	PWMTimeBaseInit(&htim12, 20000, 84);
+	PWMChannelConfig(&htim12, TIM_CHANNEL_1, TIM12_CHANNEL1_PIN);
+	PWMChannelConfig(&htim12, TIM_CHANNEL_2, TIM12_CHANNEL2_PIN);
 
 	BDCInit(&BDC1, &htim3, TIM_CHANNEL_4, SHIFTREG, &(SR.cast[1]), Bit6, Bit7);
 	BDCInit(&BDC2, &htim3, TIM_CHANNEL_3, SHIFTREG, &(SR.cast[1]), Bit4, Bit5);
