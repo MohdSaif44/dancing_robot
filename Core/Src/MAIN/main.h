@@ -26,7 +26,8 @@ void Transmission(void *argument);
 void Left_Arm(void *argument);
 void Left_Middle_Arm(void *argument);
 void MicrorosTask(void *argument);
-
+void Right_Arm(void *argument);
+void Left_Arm(void *argument);
 
 void * microros_allocate(size_t size, void * state);
 void   microros_deallocate(void * pointer, void * state);
@@ -34,12 +35,14 @@ void * microros_reallocate(void * pointer, size_t size, void * state);
 void * microros_zero_allocate(size_t number_of_elements, size_t size_of_element, void * state);
 
 void coor_callback(const void * msgin);
-uint16_t move_servo_slow(uint16_t target);
+void stop_all(void);
+void update_param(void);
 
 osThreadId_t Navigation_Task_Handle;
 osThreadId_t Calculation_Task_Handle;
 osThreadId_t Transmission_Task_Handle;
 osThreadId_t Left_Arm_Task_Handle;
+osThreadId_t Right_Arm_Task_Handle;
 osThreadId_t Left_Middle_Arm_Task_Handle;
 osThreadId_t Micrors_Task_Handle;
 osSemaphoreId_t CalcSemaphore;

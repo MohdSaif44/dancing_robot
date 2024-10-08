@@ -167,7 +167,7 @@ Srv_Drv_t srv_drv;
 Mov_Ave_t mov_l_r,mov_l_l;
 STP_t step1;
 STP_t step2;
-PID_t yaw_pid, x_pid, y_pid;
+PID_t yaw_pid, x_pid, y_pid, rotate_pid;
 
 
 #define PB1 		GPIOB_IN->bit7

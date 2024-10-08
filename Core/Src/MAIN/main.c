@@ -13,6 +13,40 @@ size_t cubemx_transport_read(struct uxrCustomTransport* transport, uint8_t* buf,
  * @retval int
  */
 
+// global variables
+
+enum {
+	red_servo,
+	main_joint,
+	mid_joint,
+	gripper_joint,
+	gripper,
+	left,
+	right,
+	left_arm,
+	right_arm
+};
+
+
+float left_current_position[5] = {1400.0, 2500.0, 2000.0, 1600.0, 2400.0};
+float left_target_position[5]  = {1400.0, 2500.0, 2000.0, 1600.0, 2400.0};
+
+float right_current_position[5] = {1100.0, 2300.0, 2500.0, 1750.0, 2400.0};
+float right_target_position[5]  = {1100.0, 2300.0, 2500.0, 1750.0, 2400.0};
+
+float    left_step_increment[5];
+
+uint16_t left_num_steps;
+uint16_t left_min_difference;
+uint16_t left_difference;
+
+float 	 right_step_increment[5];
+uint16_t right_num_steps;
+uint16_t right_min_difference;
+uint16_t right_difference;
+
+int mode;
+
 uint16_t lh_main_joint_pwm = 1400;
 uint16_t lh_mid_joint_pwm = 1800;
 uint16_t lh_gripper_pwm = 500;
@@ -47,6 +81,12 @@ int main(void)
 			.priority = (osPriority_t) osPriorityNormal,
 	};
 
+	const osThreadAttr_t Right_Arm_Task_attributes = {
+				.name = "Right_Arm",
+				.stack_size = 256 * 4,
+				.priority = (osPriority_t) osPriorityNormal,
+	};
+
 	const osThreadAttr_t Left_Middle_Arm_Task_attributes = {
 			.name = "Left_Middle_Arm",
 			.stack_size = 256 * 4,
@@ -63,12 +103,14 @@ int main(void)
 	Calculation_Task_Handle  	= osThreadNew(Calculation,  NULL, &Calculation_Task_attributes);
 	Transmission_Task_Handle 	= osThreadNew(Transmission, NULL, &Transmission_Task_attributes);
 	Left_Arm_Task_Handle 	 	= osThreadNew(Left_Arm, 	 NULL, &Left_Arm_Task_attributes);
+	Right_Arm_Task_Handle 	 	= osThreadNew(Right_Arm, 	 NULL, &Right_Arm_Task_attributes);
 //	Left_Middle_Arm_Task_Handle = osThreadNew(Left_Middle_Arm, 	 NULL, &Left_Middle_Arm_Task_attributes);
 	CalcSemaphore 			 = osSemaphoreNew(1, 0, &CalcSemaphore);
 
 	osKernelStart();
 
 	while(1){
+
 
 	}
 
@@ -132,7 +174,8 @@ typedef struct{
 } motor_check;
 
 motor_check test;
-uint8_t yaw_count, circle_count, automatic;
+
+uint8_t yaw_count, circle_count, automatic, rotating_flag = 0;
 
 void Calculation(void *argument){
 
@@ -141,48 +184,43 @@ void Calculation(void *argument){
 
 		osSemaphoreAcquire(CalcSemaphore, osWaitForever);
 
+
+		if(ps4.button & L3){
+			while(ps4.button & L3);
+			mode = left_arm;
+		}
+
+		if(ps4.button & R3){
+			while(ps4.button & R3);
+			mode = right_arm;
+		}
+
 		if(!automatic){
-			xr = -2.5*ps4.joyL_x;
-			yr =  2.5*ps4.joyL_y;
+
+			xr = -2.0*ps4.joyL_x;
+			yr =  2.0*ps4.joyL_y;
+
 		}
 		else{
+
 			xr = (Vx*cos(YawAngle*3.14/180)-Vy*sin(YawAngle*3.14/180));
 			yr = (Vx*sin(YawAngle*3.14/180)+Vy*cos(YawAngle*3.14/180));
 		}
-		yaw_count++;
 
-		RNSEnquire(RNS_COORDINATE_X_Y_Z, &rns);
-		xpos      = rns.RNS_data.common_buffer[0].data;
-		ypos      = rns.RNS_data.common_buffer[1].data;
-		YawAngle  = rns.RNS_data.common_buffer[2].data;
-		error_x   = target_pos_x - xpos;
-		error_y	  =	target_pos_y - ypos;
-		error_angle  = target_angle - YawAngle;
+		update_param();
 
 
 		if(ps4.button & CIRCLE){
 			while(ps4.button & CIRCLE);
-			circle_count=1;
-			automatic =1;
+			automatic 	 =	1;
+			circle_count =  1;
 
 		}
 
 
 		if(ps4.button & CROSS){
 
-			HAL_NVIC_SystemReset();
-			automatic = 0;
-			target_angle = 0;
-			error_x = 0;
-			error_y = 0;
-			circle_count = 0;
-			PIDDelayInit(&x_pid);
-			PIDDelayInit(&y_pid);
-			*y_pid.error = 0;
-			*x_pid.error = 0;
-			*y_pid.out_put = 0;
-			*x_pid.out_put = 0;
-			RNSStop(&rns);
+			stop_all();
 
 		}
 
@@ -194,75 +232,257 @@ void Calculation(void *argument){
 
 		if(fabs(v1) + fabs(v2) + fabs(v3) + fabs(v4) + abs(wr) > 0.05){
 
-//			if(!automatic){
 				RNSVelocity(v1, v2, v3, v4, &rns);
-//			}
 
 		}else{
 
 			RNSStop(&rns);
 		}
 
-		PID(&yaw_pid);
-		MODN(&Modn);
+		if(!rotating_flag){
 
+			PID(&yaw_pid);
+
+		}else{
+
+			PID(&rotate_pid);
+		}
+
+		MODN(&Modn);
 	}
 }
 
-float total_error;
+uint8_t servo_state = 0;
 
 void Transmission(void *argument){
 
 	while(1){
-
-		//total_error = fabs(*x_pid.error)+fabs(*y_pid.error);
-
+		//		if (ps4.button == CIRCLE){
+		//			// Pose 5
+		//			//			servo_go_position(right, 1116, 2500, 2022, 1802, 2400, 1000); //ok
+		//			right_target_position[red_servo] 	 = 1116;
+		//			right_target_position[main_joint] 	 = 2500;
+		//			right_target_position[mid_joint] 	 = 2020;
+		//			right_target_position[gripper_joint] = 1800;
+		//			right_target_position[gripper] 		 = 2400;
+		//		}
 		switch(circle_count){
 		case 1:
-			target_angle = 45;
-			osDelay(2500);
+			rotating_flag = 1;
+			target_angle = -360;
+			osDelay(4000);
+			*rotate_pid.error = 0;
+			*rotate_pid.out_put = 0;
+			rotating_flag = 0;
 			circle_count++;
 			break;
 
 		case 2:
-			target_pos_x = 4.0;
-			target_pos_y = 4.0;
+			target_pos_x = -1.5;
+			target_pos_y = -1.5;
 			osDelay(1);
 			PID(&x_pid);
 			PID(&y_pid);
 			osDelay(1);
 			if(fabs(*y_pid.error) < 0.05){
 				if(fabs(*x_pid.error) < 0.05){
-//					circle_count++;
+					*y_pid.error = 0;
+					*x_pid.error = 0;
+					*y_pid.out_put = 0;
+					*x_pid.out_put = 0;
+					circle_count++;
 				}
 			}
 			break;
+
 		case 3:
-			PID(&x_pid);
-			PID(&y_pid);
+			rotating_flag = 1;
+			target_angle = -360;
+			osDelay(4000);
+			*rotate_pid.error = 0;
+			*rotate_pid.out_put = 0;
 			target_angle = 0;
-			osDelay(1000);
+			osDelay(4000);
+			*rotate_pid.error = 0;
+			*rotate_pid.out_put = 0;
+			rotating_flag = 0;
 			circle_count++;
 			break;
 
 		case 4:
-		target_pos_x = 0.0;
-		target_pos_y = 0.0;
-		osDelay(2);
-		PID(&x_pid);
-		PID(&y_pid);
-		osDelay(2);
-		if(fabs(*y_pid.error) < 0.05){
-			if(fabs(*x_pid.error) < 0.05){
-				circle_count++;
-			}
-		}
-		break;
+			osDelay(4000);
+			servo_state = 1;
+			rotating_flag = 1;
+			target_angle = -360 * 1;
+			osDelay(4000);
+			servo_state = 0;
+			target_angle = -360 * 2;
+			osDelay(4000);
+			rotating_flag = 0;
+			circle_count++;
+			break;
 
 		case 5:
+			osDelay(4000);
+			rotating_flag = 1;
+			target_angle = -360 * 3;
+			osDelay(4000);
+			rotating_flag = 0;
+			circle_count++;
+
+		case 6:
+			target_pos_x = -3.0;
+			target_pos_y = 0;
+			osDelay(1);
 			PID(&x_pid);
 			PID(&y_pid);
+			osDelay(1);
+			if(fabs(*y_pid.error) < 0.05){
+				if(fabs(*x_pid.error) < 0.05){
+					*y_pid.error = 0;
+					*x_pid.error = 0;
+					*y_pid.out_put = 0;
+					*x_pid.out_put = 0;
+					circle_count++;
+				}
+			}
 			break;
+
+		case 7:
+			target_pos_x = -3.4;
+			target_pos_y = 0;
+			osDelay(1);
+			PID(&x_pid);
+			PID(&y_pid);
+			osDelay(1);
+			if(fabs(*y_pid.error) < 0.05){
+				if(fabs(*x_pid.error) < 0.05){
+					*y_pid.error = 0;
+					*x_pid.error = 0;
+					*y_pid.out_put = 0;
+					*x_pid.out_put = 0;
+					circle_count++;
+				}
+			}
+			break;
+
+		case 8:
+			target_pos_x = -2.6;
+			target_pos_y = 0;
+			osDelay(1);
+			PID(&x_pid);
+			PID(&y_pid);
+			osDelay(1);
+			if(fabs(*y_pid.error) < 0.05){
+				if(fabs(*x_pid.error) < 0.05){
+					*y_pid.error = 0;
+					*x_pid.error = 0;
+					*y_pid.out_put = 0;
+					*x_pid.out_put = 0;
+					circle_count++;
+				}
+			}
+			break;
+
+		case 9:
+			target_pos_x = -3.4;
+			target_pos_y = 0;
+			osDelay(1);
+			PID(&x_pid);
+			PID(&y_pid);
+			osDelay(1);
+			if(fabs(*y_pid.error) < 0.05){
+				if(fabs(*x_pid.error) < 0.05){
+					*y_pid.error = 0;
+					*x_pid.error = 0;
+					*y_pid.out_put = 0;
+					*x_pid.out_put = 0;
+					circle_count++;
+				}
+			}
+			break;
+
+		case 10:
+			target_pos_x = -2.6;
+			target_pos_y = 0;
+			osDelay(1);
+			PID(&x_pid);
+			PID(&y_pid);
+			osDelay(1);
+			if(fabs(*y_pid.error) < 0.05){
+				if(fabs(*x_pid.error) < 0.05){
+					*y_pid.error = 0;
+					*x_pid.error = 0;
+					*y_pid.out_put = 0;
+					*x_pid.out_put = 0;
+					circle_count++;
+				}
+			}
+			break;
+
+		case 11:
+			target_pos_x = -3.4;
+			target_pos_y = 0;
+			osDelay(1);
+			PID(&x_pid);
+			PID(&y_pid);
+			osDelay(1);
+			if(fabs(*y_pid.error) < 0.05){
+				if(fabs(*x_pid.error) < 0.05){
+					*y_pid.error = 0;
+					*x_pid.error = 0;
+					*y_pid.out_put = 0;
+					*x_pid.out_put = 0;
+					circle_count++;
+				}
+			}
+			break;
+
+		case 12:
+			target_pos_x = -2.6;
+			target_pos_y = 0;
+			osDelay(1);
+			PID(&x_pid);
+			PID(&y_pid);
+			osDelay(1);
+			if(fabs(*y_pid.error) < 0.05){
+				if(fabs(*x_pid.error) < 0.05){
+					*y_pid.error = 0;
+					*x_pid.error = 0;
+					*y_pid.out_put = 0;
+					*x_pid.out_put = 0;
+					osDelay(25000);
+					circle_count++;
+				}
+			}
+			break;
+
+		case 13:
+			target_pos_x = -1.5;
+			target_pos_y = 0;
+			osDelay(1);
+			PID(&x_pid);
+			PID(&y_pid);
+			osDelay(1);
+			if(fabs(*y_pid.error) < 0.05){
+				if(fabs(*x_pid.error) < 0.05){
+					*y_pid.error = 0;
+					*x_pid.error = 0;
+					*y_pid.out_put = 0;
+					*x_pid.out_put = 0;
+					circle_count++;
+				}
+			}
+			break;
+
+		case 14:
+			osDelay(4000);
+			rotating_flag = 1;
+			target_angle = -360 * 4;
+			osDelay(4000);
+			rotating_flag = 0;
+			circle_count++;
+
 
 		default:
 			circle_count = 0;
@@ -272,187 +492,426 @@ void Transmission(void *argument){
 
 }
 
-//
-//void MicrorosTask(void *argument){
-//	MX_USB_DEVICE_Init();
-//
-//rcl_publisher_t publisher;
-////std_msgs_msg_int32 msg;
-//rclc_support_t support;
-//rcl_allocator_t allocator;
-//rcl_node_t node;
-//led3 = 1;
-////
-////
-//rmw_uros_set_custom_transport(true, (void*) &hpcd_USB_OTG_FS,
-//		cubemx_transport_open, cubemx_transport_close,
-//		cubemx_transport_write, cubemx_transport_read);
-//
-//rcl_allocator_t freeRTOS_allocator =
-//		rcutils_get_zero_initialized_allocator();
-//freeRTOS_allocator.allocate = microros_allocate;
-//freeRTOS_allocator.deallocate = microros_deallocate;
-//freeRTOS_allocator.reallocate = microros_reallocate;
-//freeRTOS_allocator.zero_allocate = microros_zero_allocate;
-//rcutils_set_default_allocator(&freeRTOS_allocator);
-//allocator = rcl_get_default_allocator();
-//
-///*****************INIT MSGS***********************/
-////std_msgs_msgInt32_init(&msg);
-//
-///****************CONNECT***********************/
-//if (RCL_RET_OK != rclc_support_init(&support, 0, NULL, &allocator)) {
-//	led3 = 1;
-//	osDelay(250);
-//	NVIC_SystemReset();
-//}
-//
-//rclc_node_init_default(&node, "node", "", &support);
-//
-//
-///*****************PUBLISHERS***********************/
-//// Initialize odom publisher
-//rclc_publisher_init_best_effort(&publisher, &node,
-//		ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32), "topico");
-//
-//
-//
-////msg.data = 0;
-//
-//for(;;)
-//{
-//
-//	//		rcl_ret_t ret = rcl_publish(&publisher, &msg, NULL);
-//	//		if (ret != RCL_RET_OK)
-//	//		{
-//	//			printf("Error publishing (line %d)\n", _LINE_);
-//	//		}
-//	//
-//	//		msg.data++;
-//
-//	osDelay(10);
-// }
-//}
-//
-//void coor_callback(const void * msgin){
-//
-//
-//}
+
 
 uint8_t  L1_count;
 
 void Left_Arm(void *argument){
 
-	while(1){
+	__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3 , (int)left_current_position[red_servo]);
+	WriteBDC(&BDC6, (int)left_current_position[main_joint]);
+	WriteBDC(&BDC5, (int)left_current_position[mid_joint]);
+	WriteBDC(&BDC4, (int)left_current_position[gripper_joint]);
+	WriteBDC(&BDC3, (int)left_current_position[gripper]);
 
-		// Servo limits
-
-		if(ps4.button == L1){
-			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3 ,lh_main_joint_pwm--); //Left
-			osDelay(2);
-		}
-		else if (ps4.button == R1){
-			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3 ,lh_main_joint_pwm++); //Left
-			osDelay(2);
-		}
-
-		if(ps4.button == SQUARE){
-			WriteBDC(&BDC5, lh_mid_joint_pwm--);
-			osDelay(2);
-		}
-		else if (ps4.button == TRIANGLE){
-			WriteBDC(&BDC5, lh_mid_joint_pwm++);
-			osDelay(2);
-		}
-
-		if(ps4.button == UP){
-			WriteBDC(&BDC3, lh_gripper_pwm--);
-			osDelay(2);
-		}
-		else if (ps4.button == DOWN){
-			WriteBDC(&BDC3, lh_gripper_pwm++);
-			osDelay(2);
-		}
-
-		if(ps4.button == LEFT){
-			WriteBDC(&BDC4, lh_gripper_joint_pwm--);
-			osDelay(2);
-		}
-		else if (ps4.button == RIGHT){
-			WriteBDC(&BDC4, lh_gripper_joint_pwm++);
-			osDelay(2);
-		}
-
-
-//		if(ps4.button == L1){
-//			while(ps4.button == L1);
-//			L1_count = 1;
-//
-//		}
-//
-//
-//		if(L1_count == 1){
-//			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3 ,lh_main_joint_pwm--); //Left
-//			osDelay(1);
-//			if(lh_main_joint_pwm <= 600){
-//
-//				L1_count = 2;
-//			}
-//		}
-//		if(L1_count == 2){
-//			__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3 ,lh_main_joint_pwm++); //Left
-//			osDelay(1);
-//			if(lh_main_joint_pwm >= 1400){
-//				L1_count = 3;
-//			}
-//			if(L1_count == 3){
-//				vTaskDelay(pdMS_TO_TICKS(5000));
-//				L1_count = 1;
-//			}
-//
-//		}
-
-	}
-
-
-}
-
-
-void Left_Middle_Arm(void *argument){
 
 	while(1){
 
-		if(ps4.button == L1){
-			while(ps4.button == L1);
-			L1_count = 1;
+			if (mode == left_arm){
 
-		}
-		if(L1_count == 1){
-			WriteBDC(&BDC5, lh_mid_joint_pwm--);
-			osDelay(1);
-		}
-		if(L1_count == 2){
-			WriteBDC(&BDC5, lh_mid_joint_pwm = 1800);
-			osDelay(1);
+				if(ps4.button == L1){ // ok
+					__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3 ,left_current_position[red_servo]--);
+					osDelay(2);
+				}
+				else if (ps4.button == R1){
+					__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3 ,left_current_position[red_servo]++);
+					osDelay(2);
+				}
 
-		}
+				if(ps4.button == TRIANGLE){ // ok
+					WriteBDC(&BDC6, left_current_position[main_joint]--);
+					osDelay(2);
+				}
+				else if (ps4.button == CROSS){
+					WriteBDC(&BDC6, left_current_position[main_joint]++);
+					osDelay(2);
+				}
 
-		if(L1_count == 3){
-			WriteBDC(&BDC5, lh_mid_joint_pwm--);
-			osDelay(1);
-			if(lh_mid_joint_pwm <= 500){
-				WriteBDC(&BDC5, lh_mid_joint_pwm = 1800);
-				osDelay(100);
+				if(ps4.button == UP){ // ok
+					WriteBDC(&BDC5, left_current_position[mid_joint]--);
+					osDelay(2);
+				}
+				else if (ps4.button == DOWN){
+					WriteBDC(&BDC5, left_current_position[mid_joint]++);
+					osDelay(2);
+				}
+
+				if(ps4.button == LEFT){ // ok
+					WriteBDC(&BDC4, left_current_position[gripper_joint]--);
+					osDelay(2);
+				}
+				else if (ps4.button == RIGHT){
+					WriteBDC(&BDC4, left_current_position[gripper_joint]++);
+					osDelay(2);
+				}
+
+				if(ps4.button == SQUARE){ // ok
+					WriteBDC(&BDC3, left_current_position[gripper]--);
+					osDelay(2);
+				}
+				else if (ps4.button == CIRCLE){
+					WriteBDC(&BDC3, left_current_position[gripper]++);
+					osDelay(2);
+				}
+
+			}
+
+			if (circle_count == 1 || circle_count == 2 || circle_count == 3){
+				// Pose 2
+				left_target_position[red_servo] = 1400;
+				left_target_position[main_joint] = 2500;
+				left_target_position[mid_joint] = 1088;
+				left_target_position[gripper_joint] = 826;
+				left_target_position[gripper] = 2400;
+
+			}
+
+			if (circle_count == 4){
+				// Pose 1
+				if(servo_state == 0){
+				left_target_position[red_servo] 	= 1424;
+				left_target_position[main_joint] 	= 2500;
+				left_target_position[mid_joint] 	= 1522;
+				left_target_position[gripper_joint] = 760;
+				left_target_position[gripper]		 = 2400;
+				}
+				if(servo_state == 1){
+				left_target_position[red_servo] = 667;
+				left_target_position[main_joint] = 2500;
+				left_target_position[mid_joint] = 572;
+				left_target_position[gripper_joint] = 743;
+				left_target_position[gripper] = 2400;
+				}
 			}
 
 
+			if (circle_count == 7){
+				// Pose 2
+				left_target_position[red_servo] = 751;
+				left_target_position[main_joint] = 2500;
+				left_target_position[mid_joint] = 2000;
+				left_target_position[gripper_joint] = 659;
+				left_target_position[gripper] = 2400;
+			}
+
+			if (ps4.button == TRIANGLE){
+				// Pose 4
+	//			servo_go_position(left, 667, 2500, 572, 743, 2400, 1000); //ok
+				left_target_position[red_servo] = 667;
+				left_target_position[main_joint] = 2500;
+				left_target_position[mid_joint] = 572;
+				left_target_position[gripper_joint] = 743;
+				left_target_position[gripper] = 2400;
+			}
+
+//			if (ps4.button == CIRCLE){
+//				// Pose 5
+//	//			servo_go_position(left, 1424, 2500, 1522, 759, 2400, 1000); //ok
+//				left_target_position[red_servo] = 1424;
+//				left_target_position[main_joint] = 2500;
+//				left_target_position[mid_joint] = 1522;
+//				left_target_position[gripper_joint] = 759;
+//				left_target_position[gripper] = 2400;
+//			}
+
+			if (ps4.button == UP){
+				// Pose 6
+	//			servo_go_position(left, 1365, 2103, 393, 759, 2400, 1000); // ok
+				left_target_position[red_servo] = 1365;
+				left_target_position[main_joint] = 2100;
+				left_target_position[mid_joint] = 400;
+				left_target_position[gripper_joint] = 760;
+				left_target_position[gripper] = 2400;
+			}
+
+			if (ps4.button == DOWN){
+				// Pose 7
+	//			servo_go_position(left, 780, 2500, 1630, 500, 2400, 1000); // ok
+				left_target_position[red_servo] = 780;
+				left_target_position[main_joint] = 2500;
+				left_target_position[mid_joint] = 1630;
+				left_target_position[gripper_joint] = 500;
+				left_target_position[gripper] = 2400;
+			}
+
+			if (ps4.button == RIGHT){
+				// Pose 9
+	//			servo_go_position(left, 1133, 2373, 1800, 900, 2400, 1000); // ok
+				left_target_position[red_servo] = 1133;
+				left_target_position[main_joint] = 2373;
+				left_target_position[mid_joint] = 1800;
+				left_target_position[gripper_joint] = 900;
+				left_target_position[gripper] = 2400;
+			}
+
+			if (ps4.button == LEFT){
+				// Normal
+	//			servo_go_position(left, 1400, 2500, 2000, 500, 2400, 1000); // ok
+				left_target_position[red_servo] = 1400;
+				left_target_position[main_joint] = 2400;
+				left_target_position[mid_joint] = 2000;
+				left_target_position[gripper_joint] = 500;
+				left_target_position[gripper] = 2400;
+			}
+
+			for (int j = 0; j < 5; j++){left_target_position[mid_joint] = 1088;
+			left_target_position[gripper_joint] = 826;
+			left_target_position[gripper] = 2400;
+
+				if (fabs(left_target_position[j] - left_current_position[j]) > 10){
+
+					left_min_difference = 2500;
+
+					for (int i = 0; i < 5; i++) {
+						left_difference = fabs(left_target_position[i] - left_current_position[i]);
+						if (left_difference < left_min_difference && left_difference >= 100) {
+							left_min_difference = left_difference;
+						}
+					}
+
+					left_num_steps = left_min_difference;
+
+					for (int i = 0; i < 5; i++) {
+						left_step_increment[i] = (left_target_position[i] - left_current_position[i]) / (left_num_steps);
+					}
+
+					for (uint16_t step = 0; step <= left_num_steps; step++) {
+						for (int i = 0; i < 5; i++) {
+							left_current_position[i] += left_step_increment[i];
+						}
+						__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_3 , (int)left_current_position[red_servo]);
+						WriteBDC(&BDC6, (int)left_current_position[main_joint]);
+						WriteBDC(&BDC5, (int)left_current_position[mid_joint]);
+						WriteBDC(&BDC4, (int)left_current_position[gripper_joint]);
+						WriteBDC(&BDC3, (int)left_current_position[gripper]);
+						for (int delay = 0; delay < 2000; delay++){
+
+						}
+					}
+				}
+				break;
+			}
+		}
+
+}
+
+void Right_Arm(void *argument){
+
+	__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,  right_current_position[red_servo]);
+	__HAL_TIM_SET_COMPARE(&htim12,TIM_CHANNEL_1 ,right_current_position[main_joint]);
+	__HAL_TIM_SET_COMPARE(&htim12,TIM_CHANNEL_2 ,right_current_position[mid_joint]);
+	WriteBDC(&BDC7, right_current_position[gripper_joint]);
+	WriteBDC(&BDC8, right_current_position[gripper]);
+
+
+	while(1){
+
+		if (mode == right_arm){
+
+			if(ps4.button == L1){ // ok
+				__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,  right_current_position[red_servo]--);
+				osDelay(2);
+			}
+			else if (ps4.button == R1){
+				__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,  right_current_position[red_servo]++);
+				osDelay(2);
+			}
+
+			if(ps4.button == TRIANGLE){ // ok
+				__HAL_TIM_SET_COMPARE(&htim12,TIM_CHANNEL_1 ,right_current_position[main_joint]--);
+				osDelay(2);
+			}
+			else if (ps4.button == CROSS){
+				__HAL_TIM_SET_COMPARE(&htim12,TIM_CHANNEL_1 ,right_current_position[main_joint]++);
+				osDelay(2);
+			}
+
+			if(ps4.button == UP){ // ok
+				__HAL_TIM_SET_COMPARE(&htim12,TIM_CHANNEL_2 ,right_current_position[mid_joint]--);
+				osDelay(2);
+			}
+			else if (ps4.button == DOWN){
+				__HAL_TIM_SET_COMPARE(&htim12,TIM_CHANNEL_2 ,right_current_position[mid_joint]++);
+				osDelay(2);
+			}
+
+			if(ps4.button == LEFT){
+				WriteBDC(&BDC8, right_current_position[gripper_joint]--);
+				osDelay(2);
+			}
+			else if (ps4.button == RIGHT){
+				WriteBDC(&BDC8, right_current_position[gripper_joint]++);
+				osDelay(2);
+			}
+
+			if(ps4.button == SQUARE){
+				WriteBDC(&BDC7, right_current_position[gripper_joint]--);
+				osDelay(2);
+			}
+			else if (ps4.button == CIRCLE){
+				WriteBDC(&BDC7, right_current_position[gripper_joint]++);
+				osDelay(2);
+			}
+		}
+
+		if (circle_count == 1 || circle_count == 2 || circle_count == 3){
+			// Pose 2
+			//			servo_go_position(right, 1116, 2500, 1575, 1802, 2400, 1000); //ok
+			right_target_position[red_servo] 	 = 1100;
+			right_target_position[main_joint] 	 = 2420;
+			right_target_position[mid_joint] 	 = 2320;
+			right_target_position[gripper_joint] = 1911;
+			right_target_position[gripper] 		 = 1800;
+		}
+
+		if (circle_count == 4){
+			// Pose 1
+			//			servo_go_position(right, 1104, 2420, 2317, 1911, 1800, 1000); // ok
+			if(servo_state == 0){
+			right_target_position[red_servo] 	 = 1116;
+			right_target_position[main_joint] 	 = 2500;
+			right_target_position[mid_joint] 	 = 2022;
+			right_target_position[gripper_joint] = 1802;
+			right_target_position[gripper] 		 = 2400;
+			}
+			if(servo_state == 1){
+			right_target_position[red_servo] 	 = 1800;
+			right_target_position[main_joint] 	 = 2500;
+			right_target_position[mid_joint] 	 = 1030;
+			right_target_position[gripper_joint] = 1730;
+			right_target_position[gripper] 		 = 2400;
+			}
 		}
 
 
+		if (circle_count == 7){
+			// Pose 4
+			//			servo_go_position(right, 1797, 2500, 1030, 1726, 2400, 1000); //ok
+			right_target_position[red_servo] 	 = 1826;
+			right_target_position[main_joint] 	 = 2500;
+			right_target_position[mid_joint] 	 = 1118;
+			right_target_position[gripper_joint] = 1701;
+			right_target_position[gripper] 		 = 2400;
+		}
+
+//		if (ps4.button == CIRCLE){
+//			// Pose 5
+//			//			servo_go_position(right, 1116, 2500, 2022, 1802, 2400, 1000); //ok
+//			right_target_position[red_servo] 	 = 1116;
+//			right_target_position[main_joint] 	 = 2500;
+//			right_target_position[mid_joint] 	 = 2020;
+//			right_target_position[gripper_joint] = 1800;
+//			right_target_position[gripper] 		 = 2400;
+//		}
+
+		if (ps4.button == UP){
+			// Pose 6
+			//			servo_go_position(right, 1106, 2058, 1089, 1802, 2400, 1000); // ok
+			right_target_position[red_servo] 	 = 1100;
+			right_target_position[main_joint] 	 = 2060;
+			right_target_position[mid_joint] 	 = 1090;
+			right_target_position[gripper_joint] = 1800;
+			right_target_position[gripper] 		 = 2400;
+		}
+
+		if (ps4.button == DOWN){
+			// Pose 7
+			//			servo_go_position(right, 1570, 2500, 1360, 1800, 2400, 1000); // ok
+			right_target_position[red_servo] 	 = 1570;
+			right_target_position[main_joint] 	 = 2500;
+			right_target_position[mid_joint] 	 = 1360;
+			right_target_position[gripper_joint] = 1800;
+			right_target_position[gripper] 		 = 2400;
+		}
+
+		if (ps4.button == RIGHT){
+			// Pose 9
+			//			servo_go_position(right, 1300, 2340, 2340, 1800, 2400, 1000); // ok
+			right_target_position[red_servo] 	 = 1300;
+			right_target_position[main_joint] 	 = 2340;
+			right_target_position[mid_joint] 	 = 2340;
+			right_target_position[gripper_joint] = 1800;
+			right_target_position[gripper] 		 = 2400;
+		}
+
+		if (ps4.button == LEFT){
+			// Normal
+			//			servo_go_position(right, 1100.0, 2500.0, 2500.0, 1750.0, 2400.0, 1000); // ok
+			right_target_position[red_servo] 	 = 1100;
+			right_target_position[main_joint] 	 = 2400;
+			right_target_position[mid_joint] 	 = 2500;
+			right_target_position[gripper_joint] = 1750;
+			right_target_position[gripper] 		 = 2400;
+		}
+
+		for (int j = 0; j < 5; j++){
+
+			if (fabs(right_target_position[j] - right_current_position[j]) > 10){
+
+				right_min_difference = 2500;
+
+				for (int i = 0; i < 5; i++) {
+					right_difference = fabs(right_target_position[i] - right_current_position[i]);
+					if (right_difference < right_min_difference && right_difference >= 100) {
+						right_min_difference = right_difference;
+					}
+				}
+
+				right_num_steps = right_min_difference;
+
+				for (int i = 0; i < 5; i++) {
+					right_step_increment[i] = (right_target_position[i] - right_current_position[i]) / (right_num_steps);
+				}
+
+				for (uint16_t step = 0; step <= right_num_steps; step++) {
+					for (int i = 0; i < 5; i++) {
+						right_current_position[i] += right_step_increment[i];
+					}
+					__HAL_TIM_SET_COMPARE(&htim1,TIM_CHANNEL_4,  right_current_position[red_servo]);
+					__HAL_TIM_SET_COMPARE(&htim12,TIM_CHANNEL_1 ,right_current_position[main_joint]);
+					__HAL_TIM_SET_COMPARE(&htim12,TIM_CHANNEL_2 ,right_current_position[mid_joint]);
+					WriteBDC(&BDC7, right_current_position[gripper_joint]);
+					WriteBDC(&BDC8, right_current_position[gripper]);
+					for (int delay = 0; delay < 2000; delay++){
+
+					}
+				}
+			}
+			break;
+		}
 	}
 }
 
+void stop_all(void){
 
+	HAL_NVIC_SystemReset();
+	update_param();
+	target_angle = YawAngle;
+	automatic = 0;
+	error_x = 0;
+	error_y = 0;
+	circle_count = 0;
+	PIDDelayInit(&x_pid);
+	PIDDelayInit(&y_pid);
+	*y_pid.error = 0;
+	*x_pid.error = 0;
+	*y_pid.out_put = 0;
+	*x_pid.out_put = 0;
+	RNSStop(&rns);
+
+}
+
+void update_param(void){
+
+	RNSEnquire(RNS_COORDINATE_X_Y_Z, &rns);
+	xpos      = rns.RNS_data.common_buffer[0].data;
+	ypos      = rns.RNS_data.common_buffer[1].data;
+	YawAngle  = rns.RNS_data.common_buffer[2].data;
+	error_x   = target_pos_x - xpos;
+	error_y	  =	target_pos_y - ypos;
+	error_angle  = target_angle - YawAngle;
+
+}
 
 uint8_t ps4_count;
 
@@ -475,11 +934,6 @@ void TIM6_DAC_IRQHandler(void) //20ms
 	HAL_TIM_IRQHandler(&htim6);
 }
 
-//uint16_t move_servo_slow(uint16_t target){
-//
-//
-//
-//}
 /**
  * @brief  This function is executed in case of error occurrence.
  */
