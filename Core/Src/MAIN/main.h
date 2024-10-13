@@ -37,6 +37,8 @@ void * microros_zero_allocate(size_t number_of_elements, size_t size_of_element,
 void coor_callback(const void * msgin);
 void stop_all(void);
 void update_param(void);
+void apply_servo_param_right(void);
+void apply_servo_param_left(void);
 
 osThreadId_t Navigation_Task_Handle;
 osThreadId_t Calculation_Task_Handle;

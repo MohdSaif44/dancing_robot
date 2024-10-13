@@ -24,14 +24,14 @@ void set(void) {
 	PIDGainInit(0.005, 0.75, 0.5, 0.5, 0.35, 0.0, 0.0, 10.0, &yaw_pid);
 	//IMU rotate
 	PIDSourceInit(&error_angle, &wr, &rotate_pid);
-	PIDGainInit(0.005, 2.0, 1.0, 1.0, 0.1, 0.0, 0.0, 10.0, &rotate_pid);
+	PIDGainInit(0.005, 2.0, 1.0, 1.0, 0.075, 0.0, 0.0, 10.0, &rotate_pid);
 //	PIDGainInit(0.005, 1.0, 1.0, 1.0, 0.1, 0.0, 0.0, 10.0, &rotate_pid);
 	//X_Pos
 	PIDSourceInit(&error_x, &Vx, &x_pid);
-	PIDGainInit(0.005, 1.5, 1.0, 1.0, 3.0, 0.0, 0.0, 20.0, &x_pid);
+	PIDGainInit(0.005, 1.5, 1.0, 1.0, 5.0, 0.0, 0.0, 20.0, &x_pid);
 	//Y_pos
 	PIDSourceInit(&error_y, &Vy, &y_pid);
-	PIDGainInit(0.005, 1.5, 1.0, 1.0, 3.0, 0.0, 0.0, 20.0, &y_pid);
+	PIDGainInit(0.005, 1.5, 1.0, 1.0, 5.0, 0.0, 0.0, 20.0, &y_pid);
 
 }
 
