@@ -193,6 +193,22 @@ void Calculation(void *argument){
 			circle_flag = 1;
 		}
 
+//		if(!PB2){
+//
+//			while(!PB2);
+//
+//
+//			automatic 	 =	1;
+//			circle_count =  1;
+////				circle_count++;
+//			circle_flag = 0;
+//
+//
+//		} else if(PB2) {
+//
+//			circle_flag = 1;
+//		}
+
 
 		if(ps4.button & CROSS){
 
@@ -243,6 +259,7 @@ void Transmission(void *argument){
 			*rotate_pid.error = 0;
 			*rotate_pid.out_put = 0;
 			rotating_flag = 0;
+			osDelay(250);
 			circle_count++;
 			break;
 
@@ -253,100 +270,101 @@ void Transmission(void *argument){
 			PID(&x_pid);
 			PID(&y_pid);
 			osDelay(1);
-			if(fabs(*y_pid.error) < 0.07){
-				if(fabs(*x_pid.error) < 0.07){
+			if(fabs(*y_pid.error) < 0.1){
+				if(fabs(*x_pid.error) < 0.1){
 					*y_pid.error = 0;
 					*x_pid.error = 0;
 					*y_pid.out_put = 0;
 					*x_pid.out_put = 0;
+					osDelay(250);
 					circle_count++;
-					osDelay(1000);
 				}
 			}
 			break;
 
 		case 3:
 			rotating_flag = 1;
-			target_angle = -360;
-			osDelay(2000);
+			target_angle = -360 * 2;
+			osDelay(2500);
 			*rotate_pid.error = 0;
 			*rotate_pid.out_put = 0;
-			target_angle = 0;
+			target_angle = -360;
 			osDelay(2000);
 			dance_flag = 1;
 			*rotate_pid.error = 0;
 			*rotate_pid.out_put = 0;
 			rotating_flag = 0;
+			osDelay(1500);
 			circle_count++;
 			break;
 
 		case 4:
-			servo_state  = 1;
+			servo_state  = 0;
 			servo_state2 = 0;
-			osDelay(4000);
-			rotating_flag = 1;
-			target_angle = -360 * 1;
 			osDelay(2000);
-			servo_state  = 0;
-			servo_state2 = 0;
-			osDelay(1000);
-			servo_state  = 1;
-			servo_state2 = 0;
-			osDelay(1000);
-			servo_state  = 1;
-			servo_state2 = 1;
-			osDelay(1000);
-			servo_state  = 0;
-			servo_state2 = 1;
-			osDelay(1000);
-			servo_state  = 0;
-			servo_state2 = 0;
-			osDelay(1000);
+			rotating_flag = 1;
 			target_angle = -360 * 2;
 			osDelay(2000);
 			servo_state  = 0;
 			servo_state2 = 0;
-			osDelay(1000);
+			osDelay(600);
 			servo_state  = 1;
 			servo_state2 = 0;
-			osDelay(1000);
+			osDelay(600);
 			servo_state  = 1;
 			servo_state2 = 1;
-			osDelay(1000);
+			osDelay(600);
 			servo_state  = 0;
 			servo_state2 = 1;
-			osDelay(1000);
+			osDelay(600);
 			servo_state  = 0;
 			servo_state2 = 0;
-			osDelay(1000);
+			osDelay(600);
 			target_angle = -360 * 3;
 			osDelay(2000);
 			servo_state  = 0;
 			servo_state2 = 0;
-			osDelay(1000);
+			osDelay(600);
 			servo_state  = 1;
 			servo_state2 = 0;
-			osDelay(1000);
+			osDelay(600);
 			servo_state  = 1;
 			servo_state2 = 1;
-			osDelay(1000);
+			osDelay(600);
 			servo_state  = 0;
 			servo_state2 = 1;
-			osDelay(1000);
+			osDelay(600);
 			servo_state  = 0;
 			servo_state2 = 0;
-			osDelay(1000);
+			osDelay(600);
+			target_angle = -360 * 4;
+			osDelay(2000);
+			servo_state  = 0;
+			servo_state2 = 0;
+			osDelay(600);
+			servo_state  = 1;
+			servo_state2 = 0;
+			osDelay(600);
+			servo_state  = 1;
+			servo_state2 = 1;
+			osDelay(600);
+			servo_state  = 0;
+			servo_state2 = 1;
+			osDelay(600);
+			servo_state  = 0;
+			servo_state2 = 0;
+			osDelay(600);
 			rotating_flag = 0;
 			circle_count++;
 			break;
 
 		case 5:
-			rotating_flag = 1;
-			target_angle = -360 * 4;
-			osDelay(2000);
-			servo_state = 1;
-			osDelay(4000);
-			rotating_flag = 0;
+//			rotating_flag = 1;
+//			target_angle = -360 * 5;
+//			osDelay(2000);
+//			servo_state = 1;
+//			osDelay(2000);
+//			rotating_flag = 0;
 			circle_count++;
 
 		case 6:
@@ -356,67 +374,72 @@ void Transmission(void *argument){
 			PID(&x_pid);
 			PID(&y_pid);
 			osDelay(1);
-			if(fabs(*y_pid.error) < 0.07){
-				if(fabs(*x_pid.error) < 0.07){
+			if(fabs(*y_pid.error) < 0.11){
+				if(fabs(*x_pid.error) < 0.1){
 					*y_pid.error = 0;
 					*x_pid.error = 0;
 					*y_pid.out_put = 0;
 					*x_pid.out_put = 0;
+					PID(&x_pid);
+					PID(&y_pid);
 					// 1
 					servo_state  = 1; // left bend
 					servo_state2 = 1; // right bend
-					osDelay(1000);    // 2
-					servo_state  = 0; // left strait
-					servo_state2 = 1; // right bend
-					osDelay(1000);    // 3
-					servo_state  = 0; // left strait
-					servo_state2 = 0; // right strait
-					osDelay(1000);    // 4
-					servo_state  = 1; // left bend
-					servo_state2 = 0; // right strait
-					osDelay(1000);    // 5
-					servo_state  = 1; // left bend
-					servo_state2 = 1; // right bend
-					osDelay(1000);    // 6
-					servo_state  = 0; // left strait
-					servo_state2 = 1; // right bend
-					osDelay(1000);    // 7
-					servo_state  = 0; // left strait
-					servo_state2 = 0; // right strait
-					osDelay(1000);    // 8
-					servo_state  = 1; // left bend
-					servo_state2 = 1; // right bend
-					osDelay(1000);    // 9
-					servo_state  = 0; // left strait
-					servo_state2 = 1; // right bend
-					osDelay(1000);    // 10
-					servo_state  = 0; // left strait
-					servo_state2 = 0; // right strait
-					osDelay(1000);    // 11
-					servo_state  = 1; // left bend
-					servo_state2 = 0; // right strait
-					osDelay(1000);    // 12
-					servo_state  = 1; // left bend
-					servo_state2 = 1; // right bend
-					osDelay(1000);    // 13
-					servo_state  = 0; // left strait
-					servo_state2 = 0; // right strait
-					osDelay(1000);    // 14
-					servo_state  = 1; // left bend
-					servo_state2 = 0; // right strait
-					osDelay(1000);    // 15
-					servo_state  = 1; // left bend
-					servo_state2 = 1; // right bend
-					osDelay(1000);    // 16
-					servo_state  = 0; // left strait
-					servo_state2 = 1; // right bend
-					osDelay(1000);    // 17
-					servo_state  = 0; // left strait
-					servo_state2 = 0; // right strait
-					osDelay(1000);    // 18
-					servo_state  = 1; // left bend
-					servo_state2 = 1; // right bend
 					osDelay(1000);
+					servo_state  = 1; // left bend
+					servo_state2 = 1; // right bend
+					osDelay(550);    // 2
+					servo_state  = 0; // left strait
+					servo_state2 = 1; // right bend
+					osDelay(550);    // 3
+					servo_state  = 0; // left strait
+					servo_state2 = 0; // right strait
+					osDelay(550);    // 4
+					servo_state  = 1; // left bend
+					servo_state2 = 0; // right strait
+					osDelay(550);    // 5
+					servo_state  = 1; // left bend
+					servo_state2 = 1; // right bend
+					osDelay(550);    // 6
+					servo_state  = 0; // left strait
+					servo_state2 = 1; // right bend
+					osDelay(550);    // 7
+					servo_state  = 0; // left strait
+					servo_state2 = 0; // right strait
+					osDelay(550);    // 8
+					servo_state  = 1; // left bend
+					servo_state2 = 1; // right bend
+					osDelay(550);    // 9
+					servo_state  = 0; // left strait
+					servo_state2 = 1; // right bend
+					osDelay(550);    // 10
+					servo_state  = 0; // left strait
+					servo_state2 = 0; // right strait
+					osDelay(550);    // 11
+					servo_state  = 1; // left bend
+					servo_state2 = 0; // right strait
+					osDelay(550);    // 12
+					servo_state  = 1; // left bend
+					servo_state2 = 1; // right bend
+					osDelay(550);    // 13
+					servo_state  = 0; // left strait
+					servo_state2 = 0; // right strait
+					osDelay(550);    // 14
+					servo_state  = 1; // left bend
+					servo_state2 = 0; // right strait
+					osDelay(550);    // 15
+					servo_state  = 1; // left bend
+					servo_state2 = 1; // right bend
+					osDelay(550);    // 16
+					servo_state  = 0; // left strait
+					servo_state2 = 1; // right bend
+					osDelay(550);    // 17
+					servo_state  = 0; // left strait
+					servo_state2 = 0; // right strait
+					osDelay(550);    // 18
+					servo_state  = 1; // left bend
+					servo_state2 = 1; // right bend
+					osDelay(550);
 					servo_state  = 0; // left strait
 					servo_state2 = 0; // right strait
 					circle_count++;
@@ -437,6 +460,7 @@ void Transmission(void *argument){
 					*x_pid.error = 0;
 					*y_pid.out_put = 0;
 					*x_pid.out_put = 0;
+					osDelay(200);
 					circle_count++;
 				}
 			}
@@ -455,6 +479,7 @@ void Transmission(void *argument){
 					*x_pid.error = 0;
 					*y_pid.out_put = 0;
 					*x_pid.out_put = 0;
+					osDelay(200);
 					circle_count++;
 				}
 			}
@@ -473,6 +498,7 @@ void Transmission(void *argument){
 					*x_pid.error = 0;
 					*y_pid.out_put = 0;
 					*x_pid.out_put = 0;
+					osDelay(200);
 					circle_count++;
 				}
 			}
@@ -491,6 +517,7 @@ void Transmission(void *argument){
 					*x_pid.error = 0;
 					*y_pid.out_put = 0;
 					*x_pid.out_put = 0;
+					osDelay(200);
 					circle_count++;
 				}
 			}
@@ -509,6 +536,7 @@ void Transmission(void *argument){
 					*x_pid.error = 0;
 					*y_pid.out_put = 0;
 					*x_pid.out_put = 0;
+					osDelay(200);
 					circle_count++;
 				}
 			}
@@ -527,6 +555,7 @@ void Transmission(void *argument){
 					*x_pid.error = 0;
 					*y_pid.out_put = 0;
 					*x_pid.out_put = 0;
+					osDelay(200);
 					circle_count++;
 				}
 			}
@@ -545,6 +574,7 @@ void Transmission(void *argument){
 					*x_pid.error = 0;
 					*y_pid.out_put = 0;
 					*x_pid.out_put = 0;
+					osDelay(200);
 					circle_count++;
 				}
 			}
@@ -563,6 +593,7 @@ void Transmission(void *argument){
 					*x_pid.error = 0;
 					*y_pid.out_put = 0;
 					*x_pid.out_put = 0;
+					osDelay(200);
 					circle_count++;
 				}
 			}
@@ -581,6 +612,7 @@ void Transmission(void *argument){
 					*x_pid.error = 0;
 					*y_pid.out_put = 0;
 					*x_pid.out_put = 0;
+					osDelay(200);
 					circle_count++;
 				}
 			}
@@ -599,6 +631,7 @@ void Transmission(void *argument){
 					*x_pid.error = 0;
 					*y_pid.out_put = 0;
 					*x_pid.out_put = 0;
+					osDelay(200);
 					circle_count++;
 				}
 			}
@@ -617,6 +650,7 @@ void Transmission(void *argument){
 					*x_pid.error = 0;
 					*y_pid.out_put = 0;
 					*x_pid.out_put = 0;
+					osDelay(200);
 					circle_count++;
 				}
 			}
@@ -635,7 +669,7 @@ void Transmission(void *argument){
 					*x_pid.error = 0;
 					*y_pid.out_put = 0;
 					*x_pid.out_put = 0;
-					//					osDelay(25000);
+					osDelay(200);
 					circle_count++;
 				}
 			}
@@ -654,6 +688,7 @@ void Transmission(void *argument){
 					*x_pid.error = 0;
 					*y_pid.out_put = 0;
 					*x_pid.out_put = 0;
+					osDelay(200);
 					circle_count++;
 				}
 			}
@@ -672,6 +707,7 @@ void Transmission(void *argument){
 					*x_pid.error = 0;
 					*y_pid.out_put = 0;
 					*x_pid.out_put = 0;
+					osDelay(200);
 					circle_count++;
 				}
 			}
@@ -690,6 +726,7 @@ void Transmission(void *argument){
 					*x_pid.error = 0;
 					*y_pid.out_put = 0;
 					*x_pid.out_put = 0;
+					osDelay(200);
 					circle_count++;
 				}
 			}
@@ -710,87 +747,112 @@ void Transmission(void *argument){
 					*x_pid.out_put = 0;
 					servo_state  = 0;
 					servo_state2 = 0;
-					osDelay(1000);
+					osDelay(700);
 					servo_state  = 1;
 					servo_state2 = 0;
-					osDelay(1000);
+					osDelay(700);
 					servo_state  = 1;
 					servo_state2 = 1;
-					osDelay(1000);
+					osDelay(700);
 					servo_state  = 2;
 					servo_state2 = 1;
-					osDelay(1000);
+					osDelay(700);
 					servo_state  = 2;
 					servo_state2 = 2;
-					osDelay(1000);
+					osDelay(700);
 					servo_state  = 1;
 					servo_state2 = 2;
-					osDelay(1000);
+					osDelay(700);
 					servo_state  = 1;
 					servo_state2 = 1;
-					osDelay(1000);
+					osDelay(700);
 					servo_state  = 1;
 					servo_state2 = 0;
-					osDelay(1000);
+					osDelay(700);
 					servo_state  = 0;
 					servo_state2 = 0;
-//					// 1
-//					servo_state  = 1; // left bend
-//					servo_state2 = 1; // right bend
-//					osDelay(1000);    // 2
-//					servo_state  = 0; // left strait
-//					servo_state2 = 1; // right bend
-//					osDelay(1000);    // 3
-//					servo_state  = 0; // left strait
-//					servo_state2 = 0; // right strait
-//					osDelay(1000);    // 4
-//					servo_state  = 1; // left bend
-//					servo_state2 = 0; // right strait
-//					osDelay(1000);    // 5
-//					servo_state  = 1; // left bend
-//					servo_state2 = 1; // right bend
-//					osDelay(1000);    // 6
-//					servo_state  = 0; // left strait
-//					servo_state2 = 1; // right bend
-//					osDelay(1000);    // 7
-//					servo_state  = 0; // left strait
-//					servo_state2 = 0; // right strait
-//					osDelay(1000);    // 8
-//					servo_state  = 1; // left bend
-//					servo_state2 = 1; // right bend
-//					osDelay(1000);    // 9
-//					servo_state  = 0; // left strait
-//					servo_state2 = 1; // right bend
-//					osDelay(1000);    // 10
-//					servo_state  = 0; // left strait
-//					servo_state2 = 0; // right strait
-//					osDelay(1000);    // 11
-//					servo_state  = 1; // left bend
-//					servo_state2 = 0; // right strait
-//					osDelay(1000);    // 12
-//					servo_state  = 1; // left bend
-//					servo_state2 = 1; // right bend
-//					osDelay(1000);    // 13
-//					servo_state  = 0; // left strait
-//					servo_state2 = 0; // right strait
-//					osDelay(1000);    // 14
-//					servo_state  = 1; // left bend
-//					servo_state2 = 0; // right strait
-//					osDelay(1000);    // 15
-//					servo_state  = 1; // left bend
-//					servo_state2 = 1; // right bend
-//					osDelay(1000);    // 16
-//					servo_state  = 0; // left strait
-//					servo_state2 = 1; // right bend
-//					osDelay(1000);    // 17
-//					servo_state  = 0; // left strait
-//					servo_state2 = 0; // right strait
-//					osDelay(1000);    // 18
-//					servo_state  = 1; // left bend
-//					servo_state2 = 1; // right bend
-//					osDelay(1000);
-//					servo_state  = 0; // left strait
-//					servo_state2 = 0; // right strait
+					osDelay(700);
+					servo_state  = 1;
+					servo_state2 = 0;
+					osDelay(700);
+					servo_state  = 1;
+					servo_state2 = 1;
+					osDelay(700);
+					servo_state  = 2;
+					servo_state2 = 1;
+					osDelay(700);
+					servo_state  = 2;
+					servo_state2 = 2;
+					osDelay(700);
+					servo_state  = 1;
+					servo_state2 = 2;
+					osDelay(700);
+					servo_state  = 1;
+					servo_state2 = 1;
+					osDelay(700);
+					servo_state  = 1;
+					servo_state2 = 0;
+					osDelay(700);
+					servo_state  = 0;
+					servo_state2 = 0;
+					osDelay(700);
+					servo_state  = 1;
+					servo_state2 = 0;
+					osDelay(700);
+					servo_state  = 1;
+					servo_state2 = 1;
+					osDelay(700);
+					servo_state  = 2;
+					servo_state2 = 1;
+					osDelay(700);
+					servo_state  = 2;
+					servo_state2 = 2;
+					osDelay(700);
+					servo_state  = 1;
+					servo_state2 = 2;
+					osDelay(700);
+					servo_state  = 1;
+					servo_state2 = 1;
+					osDelay(700);
+					servo_state  = 1;
+					servo_state2 = 0;
+					osDelay(700);
+					servo_state  = 0;
+					servo_state2 = 0;
+					osDelay(700);
+					servo_state  = 1;
+					servo_state2 = 0;
+					osDelay(700);
+					servo_state  = 1;
+					servo_state2 = 1;
+					osDelay(700);
+					servo_state  = 2;
+					servo_state2 = 1;
+					osDelay(700);
+					servo_state  = 2;
+					servo_state2 = 2;
+					osDelay(700);
+					servo_state  = 1;
+					servo_state2 = 2;
+					osDelay(700);
+					servo_state  = 1;
+					servo_state2 = 1;
+					osDelay(700);
+					servo_state  = 1;
+					servo_state2 = 0;
+					osDelay(700);
+					servo_state  = 0;
+					servo_state2 = 0;
+					osDelay(700);
+					servo_state  = 1;
+					servo_state2 = 0;
+					osDelay(700);
+					servo_state  = 1;
+					servo_state2 = 1;
+					osDelay(700);
+					servo_state  = 0;
+					servo_state2 = 0;
+					osDelay(800);
 					circle_count++;
 				}
 			}
@@ -816,90 +878,201 @@ void Transmission(void *argument){
 			break;
 
 		case 24:
-//			osDelay(3000);
 			rotating_flag = 1;
 			target_angle = -360 * 5;
 			osDelay(2000);
-			target_angle = -360 * 4;
 			rotating_flag = 0;
-
-//			servo_state  = 0;
-//			servo_state2 = 0;
-//			osDelay(1000);
-//			servo_state  = 1;
-//			servo_state2 = 0;
-//			osDelay(1000);
-//			servo_state  = 1;
-//			servo_state2 = 1;
-//			osDelay(1000);
-//			servo_state  = 2;
-//			servo_state2 = 1;
-//			osDelay(1000);
-//			servo_state  = 2;
-//			servo_state2 = 2;
-//			osDelay(1000);
-//			servo_state  = 1;
-//			servo_state2 = 2;
-//			osDelay(1000);
-//			servo_state  = 1;
-//			servo_state2 = 1;
-//			osDelay(1000);
-//			servo_state  = 1;
-//			servo_state2 = 0;
-//			osDelay(1000);
-//			servo_state  = 0;
-//			servo_state2 = 0;
-
+			osDelay(700);
+			rotating_flag = 1;
+			target_angle = -360 * 4;
+			osDelay(2000);
+			rotating_flag = 0;
 			circle_count++;
 			break;
 
 		case 25:
+			osDelay(600);
+			servo_state  = 0;
+			servo_state2 = 0;
+			osDelay(600);
+			servo_state  = 1;
+			servo_state2 = 0;
+			osDelay(600);
+			servo_state  = 1;
+			servo_state2 = 1;
+			osDelay(600);
+			servo_state  = 0;
+			servo_state2 = 1;
+			osDelay(600);
+			servo_state  = 0;
+			servo_state2 = 0;
+			osDelay(600);
+			servo_state  = 1;
+			servo_state2 = 0;
+			osDelay(600);
+			servo_state  = 1;
+			servo_state2 = 1;
+			osDelay(600);
+			servo_state  = 0;
+			servo_state2 = 1;
+			osDelay(600);
+			servo_state  = 0;
+			servo_state2 = 0;
+			osDelay(600);
 			rotating_flag = 1;
 			target_angle = -360 * 5;
-			osDelay(2500);
+			osDelay(1830);
 			rotating_flag = 0;
 			circle_count++;
 			break;
 
 		case 26:
+			servo_state  = 0;
+			servo_state2 = 0;
+			osDelay(600);
+			servo_state  = 1;
+			servo_state2 = 0;
+			osDelay(600);
+			servo_state  = 1;
+			servo_state2 = 1;
+			osDelay(600);
+			servo_state  = 0;
+			servo_state2 = 1;
+			osDelay(600);
+			servo_state  = 0;
+			servo_state2 = 0;
+			osDelay(700);
 			rotating_flag = 1;
 			target_angle = -360 * 6;
-			osDelay(2500);
+			osDelay(1830);
 			rotating_flag = 0;
 			circle_count++;
 			break;
 
 		case 27:
+			servo_state  = 0;
+			servo_state2 = 0;
+			osDelay(600);
+			servo_state  = 1;
+			servo_state2 = 0;
+			osDelay(600);
+			servo_state  = 1;
+			servo_state2 = 1;
+			osDelay(600);
+			servo_state  = 0;
+			servo_state2 = 1;
+			osDelay(600);
+			servo_state  = 0;
+			servo_state2 = 0;
+			osDelay(700);
 			rotating_flag = 1;
 			target_angle = -360 * 7;
-			osDelay(2500);
+			osDelay(1830);
 			rotating_flag = 0;
 			circle_count++;
 			break;
 
 		case 28:
+			servo_state  = 0;
+			servo_state2 = 0;
+			osDelay(600);
+			servo_state  = 1;
+			servo_state2 = 0;
+			osDelay(600);
+			servo_state  = 1;
+			servo_state2 = 1;
+			osDelay(600);
+			servo_state  = 0;
+			servo_state2 = 1;
+			osDelay(600);
+			servo_state  = 0;
+			servo_state2 = 0;
+			osDelay(800);
+			servo_state  = 1;
+			servo_state2 = 0;
+			osDelay(600);
+			servo_state  = 1;
+			servo_state2 = 1;
+			osDelay(600);
+			servo_state  = 0;
+			servo_state2 = 1;
+			osDelay(600);
+			servo_state  = 0;
+			servo_state2 = 0;
+			osDelay(700);
 			rotating_flag = 1;
 			target_angle = -360 * 8;
-			osDelay(2500);
+			osDelay(1750);
 			rotating_flag = 0;
 			circle_count++;
 			break;
 
 		case 29:
+			servo_state  = 0;
+			servo_state2 = 0;
+			osDelay(600);
+			servo_state  = 1;
+			servo_state2 = 0;
+			osDelay(600);
+			servo_state  = 1;
+			servo_state2 = 1;
+			osDelay(600);
+			servo_state  = 0;
+			servo_state2 = 1;
+			osDelay(600);
+			servo_state  = 0;
+			servo_state2 = 0;
+			osDelay(700);
 			rotating_flag = 1;
 			target_angle = -360 * 9;
-			osDelay(2500);
+			osDelay(1750);
 			rotating_flag = 0;
 			circle_count++;
 			break;
 
 		case 30:
+			servo_state  = 0;
+			servo_state2 = 0;
+			osDelay(600);
+			servo_state  = 1;
+			servo_state2 = 0;
+			osDelay(600);
+			servo_state  = 1;
+			servo_state2 = 1;
+			osDelay(600);
+			servo_state  = 0;
+			servo_state2 = 1;
+			osDelay(600);
+			servo_state  = 0;
+			servo_state2 = 0;
+			osDelay(700);
 			rotating_flag = 1;
 			target_angle = -360 * 10;
-			osDelay(2500);
+			osDelay(1750);
 			rotating_flag = 0;
+			servo_state  = 0;
+			servo_state2 = 0;
+			osDelay(600);
+			servo_state  = 1;
+			servo_state2 = 0;
+			osDelay(600);
+			servo_state  = 1;
+			servo_state2 = 1;
+			osDelay(600);
+			servo_state  = 0;
+			servo_state2 = 1;
+			osDelay(600);
+			servo_state  = 0;
+			servo_state2 = 0;
+			osDelay(700);
+			rotating_flag = 1;
+			target_angle = -360 * 11;
+			osDelay(1750);
+			rotating_flag = 0;
+			osDelay(1000);
 			circle_count++;
 			break;
+
 
 		case 31:
 			target_pos_x = -2.0;
@@ -913,6 +1086,7 @@ void Transmission(void *argument){
 					*x_pid.error = 0;
 					*y_pid.out_put = 0;
 					*x_pid.out_put = 0;
+					osDelay(200);
 					circle_count++;
 				}
 			}
@@ -930,6 +1104,7 @@ void Transmission(void *argument){
 					*x_pid.error = 0;
 					*y_pid.out_put = 0;
 					*x_pid.out_put = 0;
+					osDelay(200);
 					circle_count++;
 				}
 			}
@@ -947,6 +1122,7 @@ void Transmission(void *argument){
 					*x_pid.error = 0;
 					*y_pid.out_put = 0;
 					*x_pid.out_put = 0;
+					osDelay(200);
 					circle_count++;
 				}
 			}
@@ -964,6 +1140,7 @@ void Transmission(void *argument){
 					*x_pid.error = 0;
 					*y_pid.out_put = 0;
 					*x_pid.out_put = 0;
+					osDelay(200);
 					circle_count++;
 				}
 			}
@@ -981,6 +1158,7 @@ void Transmission(void *argument){
 					*x_pid.error = 0;
 					*y_pid.out_put = 0;
 					*x_pid.out_put = 0;
+					osDelay(200);
 					circle_count++;
 				}
 			}
@@ -998,6 +1176,7 @@ void Transmission(void *argument){
 					*x_pid.error = 0;
 					*y_pid.out_put = 0;
 					*x_pid.out_put = 0;
+					osDelay(200);
 					circle_count++;
 				}
 			}
@@ -1015,6 +1194,7 @@ void Transmission(void *argument){
 					*x_pid.error = 0;
 					*y_pid.out_put = 0;
 					*x_pid.out_put = 0;
+					osDelay(200);
 					circle_count++;
 				}
 			}
@@ -1032,6 +1212,7 @@ void Transmission(void *argument){
 					*x_pid.error = 0;
 					*y_pid.out_put = 0;
 					*x_pid.out_put = 0;
+					osDelay(200);
 					circle_count++;
 				}
 			}
@@ -1238,6 +1419,132 @@ void Left_Arm(void *argument){
 			}
 		}
 
+		if (circle_count == 25){
+
+			if(servo_state == 1){
+				left_target_position[red_servo] = 667;
+				left_target_position[main_joint] = 2500;
+				left_target_position[mid_joint] = 678;
+				left_target_position[gripper_joint] = 636;
+				left_target_position[gripper] = 2400;
+				apply_servo_param_left();
+
+			}else{
+				left_target_position[red_servo] = 751;
+				left_target_position[main_joint] = 2500;
+				left_target_position[mid_joint] = 2000;
+				left_target_position[gripper_joint] = 659;
+				left_target_position[gripper] = 2400;
+				apply_servo_param_left();
+
+			}
+		}
+
+		if (circle_count == 26){
+
+			if(servo_state == 1){
+				left_target_position[red_servo] = 667;
+				left_target_position[main_joint] = 2500;
+				left_target_position[mid_joint] = 678;
+				left_target_position[gripper_joint] = 636;
+				left_target_position[gripper] = 2400;
+				apply_servo_param_left();
+
+			}else{
+				left_target_position[red_servo] = 751;
+				left_target_position[main_joint] = 2500;
+				left_target_position[mid_joint] = 2000;
+				left_target_position[gripper_joint] = 659;
+				left_target_position[gripper] = 2400;
+				apply_servo_param_left();
+
+			}
+		}
+
+		if (circle_count == 27){
+
+			if(servo_state == 1){
+				left_target_position[red_servo] = 667;
+				left_target_position[main_joint] = 2500;
+				left_target_position[mid_joint] = 678;
+				left_target_position[gripper_joint] = 636;
+				left_target_position[gripper] = 2400;
+				apply_servo_param_left();
+
+			}else{
+				left_target_position[red_servo] = 751;
+				left_target_position[main_joint] = 2500;
+				left_target_position[mid_joint] = 2000;
+				left_target_position[gripper_joint] = 659;
+				left_target_position[gripper] = 2400;
+				apply_servo_param_left();
+
+			}
+		}
+
+		if (circle_count == 28){
+
+			if(servo_state == 1){
+				left_target_position[red_servo] = 667;
+				left_target_position[main_joint] = 2500;
+				left_target_position[mid_joint] = 678;
+				left_target_position[gripper_joint] = 636;
+				left_target_position[gripper] = 2400;
+				apply_servo_param_left();
+
+			}else{
+				left_target_position[red_servo] = 751;
+				left_target_position[main_joint] = 2500;
+				left_target_position[mid_joint] = 2000;
+				left_target_position[gripper_joint] = 659;
+				left_target_position[gripper] = 2400;
+				apply_servo_param_left();
+
+			}
+		}
+
+		if (circle_count == 29){
+
+			if(servo_state == 1){
+				left_target_position[red_servo] = 667;
+				left_target_position[main_joint] = 2500;
+				left_target_position[mid_joint] = 678;
+				left_target_position[gripper_joint] = 636;
+				left_target_position[gripper] = 2400;
+				apply_servo_param_left();
+
+			}else{
+				left_target_position[red_servo] = 751;
+				left_target_position[main_joint] = 2500;
+				left_target_position[mid_joint] = 2000;
+				left_target_position[gripper_joint] = 659;
+				left_target_position[gripper] = 2400;
+				apply_servo_param_left();
+
+			}
+		}
+
+		if (circle_count == 30){
+
+			if(servo_state == 1){
+				left_target_position[red_servo] = 667;
+				left_target_position[main_joint] = 2500;
+				left_target_position[mid_joint] = 678;
+				left_target_position[gripper_joint] = 636;
+				left_target_position[gripper] = 2400;
+				apply_servo_param_left();
+
+			}else{
+				left_target_position[red_servo] = 751;
+				left_target_position[main_joint] = 2500;
+				left_target_position[mid_joint] = 2000;
+				left_target_position[gripper_joint] = 659;
+				left_target_position[gripper] = 2400;
+				apply_servo_param_left();
+
+			}
+		}
+
 		if(dance_flag){
 
 			left_target_position[red_servo] = 675;
@@ -1248,7 +1555,7 @@ void Left_Arm(void *argument){
 
 			apply_servo_param_left();
 
-			osDelay(800);
+			osDelay(700);
 
 
 			left_target_position[red_servo] = 1400;
@@ -1259,7 +1566,7 @@ void Left_Arm(void *argument){
 
 			apply_servo_param_left();
 
-			osDelay(800);
+			osDelay(700);
 
 			left_target_position[red_servo] = 675;
 			left_target_position[main_joint] = 2500;
@@ -1269,7 +1576,7 @@ void Left_Arm(void *argument){
 
 			apply_servo_param_left();
 
-			osDelay(800);
+			osDelay(700);
 
 
 			left_target_position[red_servo] = 1400;
@@ -1280,7 +1587,7 @@ void Left_Arm(void *argument){
 
 			apply_servo_param_left();
 
-			osDelay(800);
+			osDelay(700);
 
 			left_target_position[red_servo] = 751;
 			left_target_position[main_joint] = 2500;
@@ -1410,18 +1717,13 @@ void Right_Arm(void *argument){
 				right_target_position[gripper_joint] = 1701;
 				right_target_position[gripper] 		 = 2400;
 				apply_servo_param_right();
-
-//				osDelay(1750);
 			}else{
 				right_target_position[red_servo] 	 = 1800;
 				right_target_position[main_joint] 	 = 2300;
 				right_target_position[mid_joint] 	 = 2500;
 				right_target_position[gripper_joint] = 1800;
 				right_target_position[gripper] 		 = 2400;
-
 				apply_servo_param_right();
-//				osDelay(1750);
-
 			}
 
 		}
@@ -1429,7 +1731,7 @@ void Right_Arm(void *argument){
 		if(circle_count == 5){
 
 			right_target_position[red_servo] 	 = 1800;
-			right_target_position[main_joint] 	 = 2300;
+			right_target_position[main_joint] 	 = 2100;
 			right_target_position[mid_joint] 	 = 2500;
 			right_target_position[gripper_joint] = 1800;
 			right_target_position[gripper] 		 = 2400;
@@ -1469,7 +1771,7 @@ void Right_Arm(void *argument){
 				right_target_position[gripper] = 2400;
 				apply_servo_param_right();
 			}else{
-				right_target_position[red_servo] = 1120;
+				right_target_position[red_servo] = 1200;
 				right_target_position[main_joint] = 2500;
 				right_target_position[mid_joint] = 2020;
 				right_target_position[gripper_joint] = 1800;
@@ -1507,6 +1809,126 @@ void Right_Arm(void *argument){
 			}
 		}
 
+		if (circle_count == 25){
+
+			if(servo_state2 == 1){
+				right_target_position[red_servo] 	 = 1826;
+				right_target_position[main_joint] 	 = 2500;
+				right_target_position[mid_joint] 	 = 1118;
+				right_target_position[gripper_joint] = 1701;
+				right_target_position[gripper] 		 = 2400;
+				apply_servo_param_right();
+			}else{
+				right_target_position[red_servo] 	 = 1800;
+				right_target_position[main_joint] 	 = 2300;
+				right_target_position[mid_joint] 	 = 2500;
+				right_target_position[gripper_joint] = 1800;
+				right_target_position[gripper] 		 = 2400;
+				apply_servo_param_right();
+			}
+
+		}
+
+		if (circle_count == 26){
+
+			if(servo_state2 == 1){
+				right_target_position[red_servo] 	 = 1826;
+				right_target_position[main_joint] 	 = 2500;
+				right_target_position[mid_joint] 	 = 1118;
+				right_target_position[gripper_joint] = 1701;
+				right_target_position[gripper] 		 = 2400;
+				apply_servo_param_right();
+			}else{
+				right_target_position[red_servo] 	 = 1800;
+				right_target_position[main_joint] 	 = 2300;
+				right_target_position[mid_joint] 	 = 2500;
+				right_target_position[gripper_joint] = 1800;
+				right_target_position[gripper] 		 = 2400;
+				apply_servo_param_right();
+			}
+
+		}
+
+		if (circle_count == 27){
+
+			if(servo_state2 == 1){
+				right_target_position[red_servo] 	 = 1826;
+				right_target_position[main_joint] 	 = 2500;
+				right_target_position[mid_joint] 	 = 1118;
+				right_target_position[gripper_joint] = 1701;
+				right_target_position[gripper] 		 = 2400;
+				apply_servo_param_right();
+			}else{
+				right_target_position[red_servo] 	 = 1800;
+				right_target_position[main_joint] 	 = 2300;
+				right_target_position[mid_joint] 	 = 2500;
+				right_target_position[gripper_joint] = 1800;
+				right_target_position[gripper] 		 = 2400;
+				apply_servo_param_right();
+			}
+
+		}
+
+		if (circle_count == 28){
+
+			if(servo_state2 == 1){
+				right_target_position[red_servo] 	 = 1826;
+				right_target_position[main_joint] 	 = 2500;
+				right_target_position[mid_joint] 	 = 1118;
+				right_target_position[gripper_joint] = 1701;
+				right_target_position[gripper] 		 = 2400;
+				apply_servo_param_right();
+			}else{
+				right_target_position[red_servo] 	 = 1800;
+				right_target_position[main_joint] 	 = 2300;
+				right_target_position[mid_joint] 	 = 2500;
+				right_target_position[gripper_joint] = 1800;
+				right_target_position[gripper] 		 = 2400;
+				apply_servo_param_right();
+			}
+
+		}
+
+		if (circle_count == 29){
+
+			if(servo_state2 == 1){
+				right_target_position[red_servo] 	 = 1826;
+				right_target_position[main_joint] 	 = 2500;
+				right_target_position[mid_joint] 	 = 1118;
+				right_target_position[gripper_joint] = 1701;
+				right_target_position[gripper] 		 = 2400;
+				apply_servo_param_right();
+			}else{
+				right_target_position[red_servo] 	 = 1800;
+				right_target_position[main_joint] 	 = 2300;
+				right_target_position[mid_joint] 	 = 2500;
+				right_target_position[gripper_joint] = 1800;
+				right_target_position[gripper] 		 = 2400;
+				apply_servo_param_right();
+			}
+
+		}
+
+		if (circle_count == 30){
+
+			if(servo_state2 == 1){
+				right_target_position[red_servo] 	 = 1826;
+				right_target_position[main_joint] 	 = 2500;
+				right_target_position[mid_joint] 	 = 1118;
+				right_target_position[gripper_joint] = 1701;
+				right_target_position[gripper] 		 = 2400;
+				apply_servo_param_right();
+			}else{
+				right_target_position[red_servo] 	 = 1800;
+				right_target_position[main_joint] 	 = 2300;
+				right_target_position[mid_joint] 	 = 2500;
+				right_target_position[gripper_joint] = 1800;
+				right_target_position[gripper] 		 = 2400;
+				apply_servo_param_right();
+			}
+
+		}
+
 		if(dance_flag){
 
 			right_target_position[red_servo] 	 = 1800;
@@ -1517,7 +1939,7 @@ void Right_Arm(void *argument){
 
 			apply_servo_param_right();
 
-			osDelay(1000);
+			osDelay(900);
 
 
 			right_target_position[red_servo] 	 = 1100;
@@ -1529,7 +1951,7 @@ void Right_Arm(void *argument){
 
 			apply_servo_param_right();
 
-			osDelay(1000);
+			osDelay(900);
 
 			right_target_position[red_servo] 	 = 1800;
 			right_target_position[main_joint] 	 = 2300;
@@ -1539,7 +1961,7 @@ void Right_Arm(void *argument){
 
 			apply_servo_param_right();
 
-			osDelay(1000);
+			osDelay(900);
 
 
 			right_target_position[red_servo] 	 = 1100;
@@ -1551,7 +1973,7 @@ void Right_Arm(void *argument){
 
 			apply_servo_param_right();
 
-			osDelay(1000);
+			osDelay(900);
 
 			right_target_position[red_servo] 	 = 1800;
 			right_target_position[main_joint] 	 = 2300;
@@ -1585,12 +2007,16 @@ void stop_all(void){
 
 }
 
+char imu_mesg[10];
+
 void update_param(void){
 
 	RNSEnquire(RNS_COORDINATE_X_Y_Z, &rns);
 	xpos      = rns.RNS_data.common_buffer[0].data;
 	ypos      = rns.RNS_data.common_buffer[1].data;
 	YawAngle  = rns.RNS_data.common_buffer[2].data;
+	sprintf(imu_mesg,"%0.2f\n",YawAngle);
+	UARTPrintString(&huart2, imu_mesg);
 	error_x   = target_pos_x - xpos;
 	error_y	  =	target_pos_y - ypos;
 	error_angle  = target_angle - YawAngle;
