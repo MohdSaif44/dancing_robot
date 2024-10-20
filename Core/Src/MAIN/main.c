@@ -15,6 +15,8 @@ size_t cubemx_transport_read(struct uxrCustomTransport* transport, uint8_t* buf,
 
 // global variables
 
+uint8_t turn_off = 1;
+
 enum {
 	red_servo,
 	main_joint,
@@ -118,8 +120,9 @@ int main(void)
 
 }
 
-int timer, enable_flag, final_pos = 500;
+int timer, enable_flag = 0, final_pos = 500;
 float target_angle = 0.0;
+char enable_led = 'Y';
 
 void Navigation(void *argument){
 
@@ -148,6 +151,8 @@ uint8_t yaw_count, circle_count, automatic, rotating_flag = 0, circle_flag = 1;
 
 void Calculation(void *argument){
 
+	GPIOPinsInit (IP16_Analog1_PIN, GPIO_MODE_INPUT,GPIO_SPEED_FREQ_MEDIUM, GPIO_PULLUP);
+//	HAL_UART_Transmit_IT(&huart5, (uint8_t *)enable_led, sizeof(enable_flag));
 
 	while(1){
 
@@ -180,34 +185,23 @@ void Calculation(void *argument){
 
 
 		if((ps4.button & CIRCLE) && circle_flag){
-
-
-				automatic 	 =	1;
-				circle_count =  1;
-//				circle_count++;
-				circle_flag = 0;
-
-
+			HAL_UART_Transmit_IT(&huart5, (uint8_t *)enable_led, sizeof(enable_flag));
+			automatic 	 =	1;
+			circle_count =  1;
+			circle_flag = 0;
 		} else {
 
 			circle_flag = 1;
 		}
 
-//		if(!PB2){
-//
-//			while(!PB2);
-//
-//
-//			automatic 	 =	1;
-//			circle_count =  1;
-////				circle_count++;
-//			circle_flag = 0;
-//
-//
-//		} else if(PB2) {
-//
-//			circle_flag = 1;
-//		}
+
+		if(!HAL_GPIO_ReadPin(IP16_Analog1_PIN)){
+			HAL_UART_Transmit_IT(&huart5, (uint8_t *)enable_led, sizeof(enable_flag));
+			automatic 	 =	1;
+			circle_count =  1;
+			circle_count = 1;
+			circle_flag = 0;
+		}
 
 
 		if(ps4.button & CROSS){
@@ -233,7 +227,11 @@ void Calculation(void *argument){
 
 		if(!rotating_flag){
 
-			PID(&yaw_pid);
+			if(turn_off){
+
+				PID(&yaw_pid);
+
+			}
 
 		}else{
 
@@ -866,8 +864,8 @@ void Transmission(void *argument){
 			PID(&x_pid);
 			PID(&y_pid);
 			osDelay(1);
-			if(fabs(*y_pid.error) < 0.05){
-				if(fabs(*x_pid.error) < 0.05){
+			if(fabs(*y_pid.error) < 0.07){
+				if(fabs(*x_pid.error) < 0.07){
 					*y_pid.error = 0;
 					*x_pid.error = 0;
 					*y_pid.out_put = 0;
@@ -1024,7 +1022,7 @@ void Transmission(void *argument){
 			servo_state2 = 0;
 			osDelay(700);
 			rotating_flag = 1;
-			target_angle = -360 * 9;
+			target_angle = -360 * 9 - 3;
 			osDelay(1750);
 			rotating_flag = 0;
 			circle_count++;
@@ -1047,7 +1045,7 @@ void Transmission(void *argument){
 			servo_state2 = 0;
 			osDelay(700);
 			rotating_flag = 1;
-			target_angle = -360 * 10;
+			target_angle = -360 * 10 - 3;
 			osDelay(1750);
 			rotating_flag = 0;
 			servo_state  = 0;
@@ -1066,7 +1064,7 @@ void Transmission(void *argument){
 			servo_state2 = 0;
 			osDelay(700);
 			rotating_flag = 1;
-			target_angle = -360 * 11;
+			target_angle = -360 * 11 - 7;
 			osDelay(1750);
 			rotating_flag = 0;
 			osDelay(1000);
@@ -1220,6 +1218,7 @@ void Transmission(void *argument){
 
 
 		default:
+			automatic = 0;
 			circle_count = 0;
 			break;
 		}
@@ -1291,7 +1290,7 @@ void Left_Arm(void *argument){
 
 		}
 
-		if(circle_count == 1 || circle_count == 24){
+		if(circle_count == 24){
 
 			left_target_position[red_servo] = 751;
 			left_target_position[main_joint] = 2500;
@@ -1302,7 +1301,7 @@ void Left_Arm(void *argument){
 
 		}
 
-		if (circle_count == 2 || circle_count == 3){
+		if (circle_count == 1 || circle_count == 2 || circle_count == 3){
 			// Pose 2
 			//				{1400.0, 2500.0, 2000.0, 1600.0, 2400.0};
 			left_target_position[red_servo] = 1400;
@@ -1371,14 +1370,15 @@ void Left_Arm(void *argument){
 		if (circle_count == 6){
 //			Pose 5
 			if(servo_state == 1){
-				left_target_position[red_servo] = 1365;
+				left_target_position[red_servo] = 1300;
 				left_target_position[main_joint] = 2100;
 				left_target_position[mid_joint] = 500;
 				left_target_position[gripper_joint] = 760;
 				left_target_position[gripper] = 2400;
+
 				apply_servo_param_left();
 			}else{
-				left_target_position[red_servo] = 1425;
+				left_target_position[red_servo] = 1350;
 				left_target_position[main_joint] = 2500;
 				left_target_position[mid_joint] = 1520;
 				left_target_position[gripper_joint] = 760;
@@ -1664,7 +1664,7 @@ void Right_Arm(void *argument){
 			}
 		}
 
-		if(circle_count == 1 || circle_count == 24){
+		if(circle_count == 24){
 			// Pose 1
 
 			right_target_position[red_servo] 	 = 1800;
@@ -1676,7 +1676,7 @@ void Right_Arm(void *argument){
 
 		}
 
-		if (circle_count == 2 || circle_count == 3){
+		if (circle_count == 1 || circle_count == 2 || circle_count == 3){
 			// Pose 2
 			//			servo_go_position(right, 1116, 2500, 1575, 1802, 2400, 1000); //ok
 			right_target_position[red_servo] 	 = 1100;
@@ -1771,7 +1771,7 @@ void Right_Arm(void *argument){
 				right_target_position[gripper] = 2400;
 				apply_servo_param_right();
 			}else{
-				right_target_position[red_servo] = 1200;
+				right_target_position[red_servo] = 1115;
 				right_target_position[main_joint] = 2500;
 				right_target_position[mid_joint] = 2020;
 				right_target_position[gripper_joint] = 1800;
@@ -1987,11 +1987,13 @@ void Right_Arm(void *argument){
 	}
 }
 
-
 void stop_all(void){
 
 	HAL_NVIC_SystemReset();
-	target_angle = YawAngle;
+	update_param();
+//	turn_off = 0;
+	target_angle = 0;
+	wr = 0;
 	automatic = 0;
 	error_x = 0;
 	error_y = 0;
@@ -1999,8 +2001,10 @@ void stop_all(void){
 	PIDDelayInit(&x_pid);
 	PIDDelayInit(&y_pid);
 	PIDDelayInit(&yaw_pid);
+	yaw_pid.error =0;
 	*y_pid.error = 0;
 	*x_pid.error = 0;
+	*yaw_pid.out_put = 0;
 	*y_pid.out_put = 0;
 	*x_pid.out_put = 0;
 	RNSStop(&rns);
