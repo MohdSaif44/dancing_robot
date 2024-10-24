@@ -15,7 +15,7 @@ size_t cubemx_transport_read(struct uxrCustomTransport* transport, uint8_t* buf,
 
 // global variables
 
-uint8_t turn_off = 1;
+uint8_t turn_off = 1, one_time = 1;
 
 enum {
 	red_servo,
@@ -30,11 +30,11 @@ enum {
 };
 
 
-float left_current_position[5] = {1400.0, 2500.0, 2000.0, 1600.0, 2400.0};
-float left_target_position[5]  = {1400.0, 2500.0, 2000.0, 1600.0, 2400.0};
+float left_current_position[5] = {1350.0, 2500.0, 2000.0, 1600.0, 2400.0};
+float left_target_position[5]  = {1350.0, 2500.0, 2000.0, 1600.0, 2400.0};
 
-float right_current_position[5] = {1100.0, 2300.0, 2500.0, 1750.0, 2400.0};
-float right_target_position[5]  = {1100.0, 2300.0, 2500.0, 1750.0, 2400.0};
+float right_current_position[5] = {1115.0, 2300.0, 2500.0, 1750.0, 2400.0};
+float right_target_position[5]  = {1115.0, 2300.0, 2500.0, 1750.0, 2400.0};
 
 float    left_step_increment[5];
 
@@ -152,7 +152,7 @@ uint8_t yaw_count, circle_count, automatic, rotating_flag = 0, circle_flag = 1;
 void Calculation(void *argument){
 
 	GPIOPinsInit (IP16_Analog1_PIN, GPIO_MODE_INPUT,GPIO_SPEED_FREQ_MEDIUM, GPIO_PULLUP);
-//	HAL_UART_Transmit_IT(&huart5, (uint8_t *)enable_led, sizeof(enable_flag));
+	HAL_UART_Transmit_IT(&huart5, (uint8_t *)enable_led, sizeof(enable_flag));
 
 	while(1){
 
@@ -187,7 +187,9 @@ void Calculation(void *argument){
 		if((ps4.button & CIRCLE) && circle_flag){
 			HAL_UART_Transmit_IT(&huart5, (uint8_t *)enable_led, sizeof(enable_flag));
 			automatic 	 =	1;
+//			while((ps4.button & CIRCLE));
 			circle_count =  1;
+//			circle_count ++;
 			circle_flag = 0;
 		} else {
 
@@ -197,10 +199,18 @@ void Calculation(void *argument){
 
 		if(!HAL_GPIO_ReadPin(IP16_Analog1_PIN)){
 			HAL_UART_Transmit_IT(&huart5, (uint8_t *)enable_led, sizeof(enable_flag));
+			if(one_time){
+				circle_count = 1;
+				one_time = 0;
+			}
 			automatic 	 =	1;
-			circle_count =  1;
-			circle_count = 1;
-			circle_flag = 0;
+//			circle_flag = 0;
+		}
+
+		else{
+//			 circle_flag = 1;
+			//			HAL_GPIO_DeInit(IP16_Analog1_PIN);
+
 		}
 
 
@@ -250,7 +260,12 @@ void Transmission(void *argument){
 	while(1){
 
 		switch(circle_count){
+
+		case 0:
+				break;
+
 		case 1:
+			osDelay(1);
 			rotating_flag = 1;
 			target_angle = -360;
 			osDelay(2000);
@@ -1304,7 +1319,7 @@ void Left_Arm(void *argument){
 		if (circle_count == 1 || circle_count == 2 || circle_count == 3){
 			// Pose 2
 			//				{1400.0, 2500.0, 2000.0, 1600.0, 2400.0};
-			left_target_position[red_servo] = 1400;
+			left_target_position[red_servo] = 1350;
 			left_target_position[main_joint] = 2500;
 			left_target_position[mid_joint] = 2000;
 			left_target_position[gripper_joint] = 1600;
@@ -1316,7 +1331,7 @@ void Left_Arm(void *argument){
 		if (circle_count == 4){
 
 			if(servo_state == 1){
-				left_target_position[red_servo] = 667;
+				left_target_position[red_servo] = 730;
 				left_target_position[main_joint] = 2500;
 				left_target_position[mid_joint] = 678;
 				left_target_position[gripper_joint] = 636;
@@ -1359,7 +1374,7 @@ void Left_Arm(void *argument){
 		if (circle_count == 9 || circle_count == 10 || circle_count == 13 || circle_count == 14 || circle_count == 17 || circle_count == 18 || circle_count == 21 || circle_count == 33  || circle_count == 34  || circle_count == 37  || circle_count == 38 ){
 			// Pose 4
 			//			servo_go_position(left, 667, 2500, 572, 743, 2400, 1000); //ok
-			left_target_position[red_servo] = 667;
+			left_target_position[red_servo] = 730;
 			left_target_position[main_joint] = 2500;
 			left_target_position[mid_joint] = 678;
 			left_target_position[gripper_joint] = 636;
@@ -1393,7 +1408,7 @@ void Left_Arm(void *argument){
 		if (circle_count == 22){
 
 			if(servo_state == 1){
-				left_target_position[red_servo] = 667;
+				left_target_position[red_servo] = 730;
 				left_target_position[main_joint] = 2500;
 				left_target_position[mid_joint] = 678;
 				left_target_position[gripper_joint] = 636;
@@ -1422,7 +1437,7 @@ void Left_Arm(void *argument){
 		if (circle_count == 25){
 
 			if(servo_state == 1){
-				left_target_position[red_servo] = 667;
+				left_target_position[red_servo] = 730;
 				left_target_position[main_joint] = 2500;
 				left_target_position[mid_joint] = 678;
 				left_target_position[gripper_joint] = 636;
@@ -1443,7 +1458,7 @@ void Left_Arm(void *argument){
 		if (circle_count == 26){
 
 			if(servo_state == 1){
-				left_target_position[red_servo] = 667;
+				left_target_position[red_servo] = 730;
 				left_target_position[main_joint] = 2500;
 				left_target_position[mid_joint] = 678;
 				left_target_position[gripper_joint] = 636;
@@ -1464,7 +1479,7 @@ void Left_Arm(void *argument){
 		if (circle_count == 27){
 
 			if(servo_state == 1){
-				left_target_position[red_servo] = 667;
+				left_target_position[red_servo] = 730;
 				left_target_position[main_joint] = 2500;
 				left_target_position[mid_joint] = 678;
 				left_target_position[gripper_joint] = 636;
@@ -1485,7 +1500,7 @@ void Left_Arm(void *argument){
 		if (circle_count == 28){
 
 			if(servo_state == 1){
-				left_target_position[red_servo] = 667;
+				left_target_position[red_servo] = 730;
 				left_target_position[main_joint] = 2500;
 				left_target_position[mid_joint] = 678;
 				left_target_position[gripper_joint] = 636;
@@ -1506,7 +1521,7 @@ void Left_Arm(void *argument){
 		if (circle_count == 29){
 
 			if(servo_state == 1){
-				left_target_position[red_servo] = 667;
+				left_target_position[red_servo] = 730;
 				left_target_position[main_joint] = 2500;
 				left_target_position[mid_joint] = 678;
 				left_target_position[gripper_joint] = 636;
@@ -1527,7 +1542,7 @@ void Left_Arm(void *argument){
 		if (circle_count == 30){
 
 			if(servo_state == 1){
-				left_target_position[red_servo] = 667;
+				left_target_position[red_servo] = 730;
 				left_target_position[main_joint] = 2500;
 				left_target_position[mid_joint] = 678;
 				left_target_position[gripper_joint] = 636;
@@ -1555,7 +1570,7 @@ void Left_Arm(void *argument){
 
 			apply_servo_param_left();
 
-			osDelay(700);
+			osDelay(750);
 
 
 			left_target_position[red_servo] = 1400;
@@ -1566,7 +1581,7 @@ void Left_Arm(void *argument){
 
 			apply_servo_param_left();
 
-			osDelay(700);
+			osDelay(750);
 
 			left_target_position[red_servo] = 675;
 			left_target_position[main_joint] = 2500;
@@ -1576,7 +1591,7 @@ void Left_Arm(void *argument){
 
 			apply_servo_param_left();
 
-			osDelay(700);
+			osDelay(750);
 
 
 			left_target_position[red_servo] = 1400;
@@ -1679,7 +1694,7 @@ void Right_Arm(void *argument){
 		if (circle_count == 1 || circle_count == 2 || circle_count == 3){
 			// Pose 2
 			//			servo_go_position(right, 1116, 2500, 1575, 1802, 2400, 1000); //ok
-			right_target_position[red_servo] 	 = 1100;
+			right_target_position[red_servo] 	 = 1115;
 			right_target_position[main_joint] 	 = 2420;
 			right_target_position[mid_joint] 	 = 2320;
 			right_target_position[gripper_joint] = 1911;
@@ -1731,7 +1746,7 @@ void Right_Arm(void *argument){
 		if(circle_count == 5){
 
 			right_target_position[red_servo] 	 = 1800;
-			right_target_position[main_joint] 	 = 2100;
+			right_target_position[main_joint] 	 = 2300;
 			right_target_position[mid_joint] 	 = 2500;
 			right_target_position[gripper_joint] = 1800;
 			right_target_position[gripper] 		 = 2400;
@@ -1772,7 +1787,7 @@ void Right_Arm(void *argument){
 				apply_servo_param_right();
 			}else{
 				right_target_position[red_servo] = 1115;
-				right_target_position[main_joint] = 2500;
+				right_target_position[main_joint] = 2300;
 				right_target_position[mid_joint] = 2020;
 				right_target_position[gripper_joint] = 1800;
 				right_target_position[gripper] = 2400;
@@ -1992,7 +2007,7 @@ void stop_all(void){
 	HAL_NVIC_SystemReset();
 	update_param();
 //	turn_off = 0;
-	target_angle = 0;
+//	target_angle = 0;
 	wr = 0;
 	automatic = 0;
 	error_x = 0;
@@ -2001,12 +2016,15 @@ void stop_all(void){
 	PIDDelayInit(&x_pid);
 	PIDDelayInit(&y_pid);
 	PIDDelayInit(&yaw_pid);
-	yaw_pid.error =0;
+	PIDDelayInit(&rotate_pid);
+	*rotate_pid.error = 0;
+	*yaw_pid.error =0;
 	*y_pid.error = 0;
 	*x_pid.error = 0;
 	*yaw_pid.out_put = 0;
 	*y_pid.out_put = 0;
 	*x_pid.out_put = 0;
+	*rotate_pid.out_put = 0;
 	RNSStop(&rns);
 
 }
@@ -2019,11 +2037,16 @@ void update_param(void){
 	xpos      = rns.RNS_data.common_buffer[0].data;
 	ypos      = rns.RNS_data.common_buffer[1].data;
 	YawAngle  = rns.RNS_data.common_buffer[2].data;
-	sprintf(imu_mesg,"%0.2f\n",YawAngle);
-	UARTPrintString(&huart2, imu_mesg);
+//	sprintf(imu_mesg,"%0.2f\n",YawAngle);
+//	UARTPrintString(&huart2, imu_mesg);
 	error_x   = target_pos_x - xpos;
 	error_y	  =	target_pos_y - ypos;
 	error_angle  = target_angle - YawAngle;
+//	RNSEnquire(RNS_VEL_BOTH, &rns);
+//	test.m1 = rns.RNS_data.common_buffer[0].data;
+//	test.m2 = rns.RNS_data.common_buffer[1].data;
+//	test.m3 = rns.RNS_data.common_buffer[2].data;
+//	test.m4 = rns.RNS_data.common_buffer[3].data;
 
 }
 
